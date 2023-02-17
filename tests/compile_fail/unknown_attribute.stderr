@@ -1,0 +1,5 @@
+error: Unknown attribute.
+ --> tests/compile_fail/unknown_attribute.rs:7:12
+  |
+7 |     #[attr(b = 3)]
+  |            ^

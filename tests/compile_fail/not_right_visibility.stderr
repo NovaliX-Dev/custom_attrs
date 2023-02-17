@@ -1,0 +1,8 @@
+error[E0624]: associated function `get_a` is private
+  --> tests/compile_fail/not_right_visibility.rs:19:37
+   |
+4  |     #[derive(CustomAttrs)]
+   |              ----------- private associated function defined here
+...
+19 |     let _a = module::Enum::Variant1.get_a();
+   |                                     ^^^^^ private associated function

@@ -1,0 +1,5 @@
+error: Value not set for `a`.
+ --> tests/compile_fail/attribute_not_set.rs:6:5
+  |
+6 |     Variant1,
+  |     ^^^^^^^^
