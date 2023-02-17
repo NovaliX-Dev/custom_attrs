@@ -1,7 +1,7 @@
 use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
-#[attr(pub a: usize = 8)]
+#[attr(pub a: Option<usize>)]
 enum Enum {
     Variant1,
 
@@ -11,4 +11,6 @@ enum Enum {
 
 fn main() {
     let a = Enum::Variant1.get_a();
+
+    assert!(a.is_none());
 }

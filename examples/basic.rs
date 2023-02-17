@@ -7,7 +7,7 @@ enum Enum {
     Variant1,
 
     #[attr(a = 3)]
-    Variant2
+    Variant2,
 }
 
 fn main() {
