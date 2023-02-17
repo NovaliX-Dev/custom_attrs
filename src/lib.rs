@@ -97,36 +97,28 @@ impl ToTokens for AttributeValueAssignment {
     }
 }
 
-enum AttributeState {
-    NotSet,
-    Set(Expr),
-}
-
 struct AttributeValue<'f> {
     variant_ident: &'f Ident,
-    value: AttributeState,
+    value: Option<Expr>,
 }
 
 impl<'f> AttributeValue<'f> {
     pub fn new(field_ident: &'f Ident) -> Self {
         Self {
             variant_ident: field_ident,
-            value: AttributeState::NotSet,
+            value: None,
         }
     }
 }
 
 impl<'f> ToTokens for AttributeValue<'f> {
     fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
-        if let AttributeState::NotSet = &self.value {
+        if let None = &self.value {
             return proc_macro2::TokenStream::new().to_tokens(tokens2)
         }
         
         let ident = &self.variant_ident;
-        let value = match &self.value {
-            AttributeState::Set(value) => value,
-            _ => unreachable!()
-        };
+        let value = self.value.as_ref().unwrap();
 
         let tokens = quote! {
             if let Self::#ident = self {
@@ -170,8 +162,8 @@ impl<'f> Attribute<'f> {
             .expect("tried to set a value for a variant that doesn't exists.");
 
         match attr_value.value {
-            AttributeState::NotSet => attr_value.value = AttributeState::Set(value.value),
-            AttributeState::Set(ref value2) => {
+            None => attr_value.value = Some(value.value),
+            Some(ref value2) => {
                 emit_error!(value2, format!("First value of `{}` is set here.", self.ident));
                 emit_error!(value, "The value is already set for this attribute.")
             }
@@ -184,7 +176,7 @@ impl<'f> Attribute<'f> {
         }
 
         for value in &self.values {
-            if let AttributeState::NotSet = value.value {
+            if value.value.is_none() {
                 emit_error!(value.variant_ident, format!("Value not set for `{}`.", self.ident));
             }
         }
