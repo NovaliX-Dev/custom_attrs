@@ -323,14 +323,6 @@ fn _derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
     }
 }
 
-/// # Custom Attrs
-/// 
-/// A library that allows to add customs values to variants of an enum.
-/// 
-/// ## How to use it
-/// 
-/// ### Example 1 : Defining a single attribute
-/// 
 #[proc_macro_derive(CustomAttrs, attributes(attr))]
 #[proc_macro_error]
 pub fn derive_custom_attrs(input: TokenStream) -> TokenStream {
