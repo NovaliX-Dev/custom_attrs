@@ -8,7 +8,7 @@ A library that allows you to configure values specific to each variants of an en
 
 ## Examples
 
-```
+```Rust
 use custom_attrs::CustomAttrs;
 
 // ...
