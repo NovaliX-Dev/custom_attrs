@@ -1,9 +1,8 @@
 use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
-#[attr(pub a: usize = "should fail")]
+#[attr(pub a: usize = 8)]
 enum Enum {
-    #[attr(a = "should fail")]
     Variant1,
 
     #[attr(a = 3)]
@@ -11,5 +10,5 @@ enum Enum {
 }
 
 fn main() {
-    // let _a = Enum::Variant1.get_a();
+    let a = Enum::Variant1.get_a();
 }

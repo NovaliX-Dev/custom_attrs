@@ -1,8 +1,16 @@
 error[E0308]: mismatched types
  --> tests/compile_fail/not_right_type.rs:6:16
   |
-4 | #[attr(pub a: usize)]
+4 | #[attr(pub a: usize = "should fail")]
   |               ----- expected `usize` because of return type
 5 | enum Enum {
 6 |     #[attr(a = "should fail")]
   |                ^^^^^^^^^^^^^ expected `usize`, found `&str`
+
+error[E0308]: mismatched types
+ --> tests/compile_fail/not_right_type.rs:4:23
+  |
+4 | #[attr(pub a: usize = "should fail")]
+  |               -----   ^^^^^^^^^^^^^ expected `usize`, found `&str`
+  |               |
+  |               expected `usize` because of return type

@@ -3,7 +3,7 @@ use proc_macro2::Ident;
 use proc_macro_error::{abort, emit_error, proc_macro_error, abort_if_dirty};
 use quote::{quote, ToTokens, format_ident};
 use syn::{
-    parse::Parse, punctuated::Punctuated, token::Comma, DataEnum, DeriveInput, Expr, Token, Type,
+    parse::Parse, punctuated::Punctuated, token::{Comma, CustomToken}, DataEnum, DeriveInput, Expr, Token, Type,
     Variant, Visibility,
 };
 
@@ -17,11 +17,41 @@ macro_rules! unwrap_opt_or_continue {
     }};
 }
 
+struct AttributeDefaultValue {
+    _equal: Token!(=),
+    value: Expr
+}
+
+impl Parse for AttributeDefaultValue {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            _equal: input.parse()?,
+            value: input.parse()?
+        })
+    }
+}
+
+impl CustomToken for AttributeDefaultValue {
+    fn peek(cursor: syn::buffer::Cursor) -> bool {
+        if let Some((punct, _)) = cursor.punct() {
+            if punct.as_char() == '=' {
+                return true
+            }
+        }
+        return false
+    }
+
+    fn display() -> &'static str {
+        todo!()
+    }
+}
+
 struct AttributeDeclaration {
     vis: Visibility,
     ident: Ident,
     _colon: Token!(:),
     type_: Type,
+    default_value: Option<AttributeDefaultValue>
 }
 
 impl Parse for AttributeDeclaration {
@@ -38,6 +68,7 @@ impl Parse for AttributeDeclaration {
                 }
                 res.unwrap()
             },
+            default_value: input.parse()?
         })
     }
 }
@@ -87,10 +118,14 @@ impl<'f> AttributeValue<'f> {
 
 impl<'f> ToTokens for AttributeValue<'f> {
     fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
+        if let AttributeState::NotSet = &self.value {
+            return proc_macro2::TokenStream::new().to_tokens(tokens2)
+        }
+        
         let ident = &self.variant_ident;
         let value = match &self.value {
-            AttributeState::NotSet => panic!("Try to generate tokens from a unset attribute."),
             AttributeState::Set(value) => value,
+            _ => unreachable!()
         };
 
         let tokens = quote! {
@@ -108,6 +143,7 @@ struct Attribute<'f> {
     ident: Ident,
     type_: Type,
     values: Vec<AttributeValue<'f>>,
+    default: Option<Expr>
 }
 
 impl<'f> Attribute<'f> {
@@ -122,6 +158,7 @@ impl<'f> Attribute<'f> {
             ident: declaration.ident,
             type_: declaration.type_,
             values,
+            default: declaration.default_value.map(|default| default.value)
         }
     }
 
@@ -142,6 +179,10 @@ impl<'f> Attribute<'f> {
     }
 
     fn check(&self) {
+        if self.default.is_some() {
+            return
+        }
+
         for value in &self.values {
             if let AttributeState::NotSet = value.value {
                 emit_error!(value.variant_ident, format!("Value not set for `{}`.", self.ident));
@@ -158,11 +199,16 @@ impl<'f> ToTokens for Attribute<'f> {
         let type_ = &self.type_;
         let values = &self.values;
 
+        let default = match &self.default {
+            Some(value) => quote!(#value),
+            None => quote!( unreachable!() ),
+        };
+
         let tokens = quote! {
             #vis fn #function_name(&self) -> #type_ {
                 #(#values)*
 
-                unreachable!()
+                #default
             }
         };
 
