@@ -1,4 +1,4 @@
-Custom Attrs
+# Custom Attrs
 
 A library that allows you to configure values specific to each variants of an enum.
 

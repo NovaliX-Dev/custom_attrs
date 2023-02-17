@@ -1,4 +1,4 @@
-//! Custom Attrs
+//! # Custom Attrs
 //! 
 //! A library that allows you to configure values specific to each variants of an enum.
 //! 
@@ -46,7 +46,7 @@ use syn::DeriveInput;
 
 mod derive;
 
-/// The main function of the library.
+/// The main trait of the library.
 /// 
 /// ## Examples
 /// 
