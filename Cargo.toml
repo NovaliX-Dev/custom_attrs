@@ -1,5 +1,8 @@
 [package]
 name = "custom_attrs"
+description = "A library that allows you to configure values specific to each variants of an enum."
+license-file = "./LICENSE"
+authors = ["NovaliX-Dev"]
 version = "1.2.0"
 edition = "2021"
 
