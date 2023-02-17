@@ -1,3 +1,4 @@
+#![allow(unused)]
 use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
