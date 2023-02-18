@@ -1,6 +1,7 @@
 # Custom Attrs
 
-[![Building](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml/badge.svg)](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml)
+[![Build](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml/badge.svg)](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml)
+[![Tests](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/tests.yml/badge.svg)](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/tests.yml)
 [![Crates.io](https://img.shields.io/crates/v/custom_attrs.svg)](https://crates.io/crates/custom_attrs)
 [![License](https://img.shields.io/crates/l/custom_attrs.svg)](./LICENSE)
 [![Documentation](https://docs.rs/custom_attrs/badge.svg)](https://docs.rs/custom_attrs)
