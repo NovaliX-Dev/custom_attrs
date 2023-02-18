@@ -103,6 +103,14 @@
 //!     VariantC,
 //! }
 //! ```
+//! 
+//! ### Getting a value attribute
+//!
+//! To get the value from a variant, simple call `get_<attribute name>`.
+//! 
+//! ```rust
+//! Element::VariantA.get_a();
+//! ```
 //!
 //! ## Examples
 //!
@@ -247,6 +255,14 @@ mod derive;
 /// }
 /// ```
 ///
+/// ### Getting a value attribute
+///
+/// To get the value from a variant, simple call `get_<attribute name>`.
+/// 
+/// ```rust
+/// Element::VariantA.get_a();
+/// ```
+/// 
 /// ## Examples
 ///
 /// ```rust
