@@ -5,8 +5,8 @@ use syn::{
     parse::Parse,
     punctuated::Punctuated,
     token::{Comma, CustomToken},
-    DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment,
-    Token, Type, Variant, Visibility,
+    DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment, Token, Type,
+    Variant, Visibility,
 };
 
 macro_rules! unwrap_opt_or_continue {
@@ -133,7 +133,7 @@ impl<'f> ToTokens for AttributeValue<'f> {
                 } else {
                     quote!(Some(#value))
                 }
-            },
+            }
         };
 
         let tokens = quote! {
@@ -240,7 +240,7 @@ impl<'f> ToTokens for Attribute<'f> {
                     }
                 }
                 tokens
-            },
+            }
             None => {
                 if let TypeState::Optional(_) = self.type_ {
                     quote!(None)
@@ -328,7 +328,6 @@ fn extract_type_from_option(ty: &syn::Type) -> Option<&syn::Type> {
 fn is_option_wrapped(expr: &syn::Expr) -> bool {
     match expr {
         Expr::Call(call) => {
-
             let mut func_name_valid = false;
             if let Expr::Path(path) = call.func.as_ref() {
                 if let Some(segment) = extract_option_segment(&path.path) {
@@ -338,8 +337,8 @@ fn is_option_wrapped(expr: &syn::Expr) -> bool {
                 }
             }
 
-            return call.args.len() == 1 && func_name_valid
-        },
+            return call.args.len() == 1 && func_name_valid;
+        }
         Expr::Path(path) => {
             if path.qself.is_some() {
                 return false;
