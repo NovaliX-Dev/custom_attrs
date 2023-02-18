@@ -8,16 +8,70 @@
 
 A library that allows you to configure values specific to each variants of an enum.
 
-## Features
-- Optional attributes
-- Default values
-
-## Installation
+## Installation and Usage
 
 Add this to your `Cargo.toml` file :
 ```toml
 [dependencies]
 custom_attrs = "1.2.2"
+```
+
+### Attribute declaration.
+
+By default, an attribute declaration is composed of two parts : the attribute's name and it's type.
+
+```rust
+#[attr(name: u32)]
+```
+
+Optionally, you can add more components.
+
+### Optional components
+
+You can set the visibility of the attribute. This will change the visibility of the getter function.
+
+```rust
+#[attr(pub name: u32)]
+enum Enum {}
+```
+
+By default, each attribute declared require a value to be set for each variant.
+If this requirement is not set, this library will produce an error.
+
+You can disable this behavior by making it optional, by writing the type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
+
+```rust
+#[attr(name: Option<u32>)]
+enum Enum {}
+```
+
+```rust
+#[attr(name: u32 = 3)]
+enum Enum {}
+```
+
+### Setting a value
+
+To set a value for a variant, just add the name of the attribute followed by the value you want to assign it.
+
+
+```rust
+enum Enum {
+    #[attr(name = 4)]
+    VariantA
+}
+```
+
+If the attribute is optional, you don't have to wrap you value into a `Some`. `custom_attrs` will do it for you. If you want the value to be `None`, just put `None` behind the value.
+
+```rust
+enum Enum {
+    #[attr(name = 4)]
+    VariantA,
+
+    #[attr(name = None)]
+    VariantA,
+}
 ```
 
 ## Examples
