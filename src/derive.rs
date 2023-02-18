@@ -5,8 +5,8 @@ use syn::{
     parse::Parse,
     punctuated::Punctuated,
     token::{Comma, CustomToken},
-    DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment, Token, Type,
-    Variant, Visibility,
+    DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment,
+    Token, Type, Variant, Visibility,
 };
 
 macro_rules! unwrap_opt_or_continue {
@@ -124,9 +124,16 @@ impl<'f> ToTokens for AttributeValue<'f> {
         let ident = &self.variant_ident;
 
         let value = self.value.as_ref().unwrap();
+
         let value = match self.type_state {
             TypeState::Required(_) => quote!(#value),
-            TypeState::Optional(_) => quote!(Some(#value)),
+            TypeState::Optional(_) => {
+                if is_option_wrapped(value) {
+                    quote!(#value)
+                } else {
+                    quote!(Some(#value))
+                }
+            },
         };
 
         let tokens = quote! {
@@ -225,7 +232,15 @@ impl<'f> ToTokens for Attribute<'f> {
         let values = &self.values;
 
         let default = match &self.default {
-            Some(value) => quote!(#value),
+            Some(value) => {
+                let mut tokens = quote!(#value);
+                if let TypeState::Optional(_) = self.type_ {
+                    if !is_option_wrapped(value) {
+                        tokens = quote!(Some(#value))
+                    }
+                }
+                tokens
+            },
             None => {
                 if let TypeState::Optional(_) = self.type_ {
                     quote!(None)
@@ -254,6 +269,22 @@ fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
     }
 }
 
+fn extract_option_declaration_segment(path: &Path) -> Option<&PathSegment> {
+    let idents_of_path = path
+        .segments
+        .iter()
+        .into_iter()
+        .fold(String::new(), |mut acc, v| {
+            acc.push_str(&v.ident.to_string());
+            acc.push('|');
+            acc
+        });
+    vec!["Option|", "std|option|Option", "core|option|Option"]
+        .into_iter()
+        .find(|s| idents_of_path == *s)
+        .and_then(|_| path.segments.last())
+}
+
 fn extract_option_segment(path: &Path) -> Option<&PathSegment> {
     let idents_of_path = path
         .segments
@@ -264,15 +295,22 @@ fn extract_option_segment(path: &Path) -> Option<&PathSegment> {
             acc.push('|');
             acc
         });
-    vec!["Option|", "std|option|Option|", "core|option|Option|"]
-        .into_iter()
-        .find(|s| idents_of_path == *s)
-        .and_then(|_| path.segments.last())
+    vec![
+        "Some|",
+        "None|",
+        "std|option|Option|Some|",
+        "std|option|Option|None|",
+        "core|option|Option|Some|",
+        "core|option|Option|None|",
+    ]
+    .into_iter()
+    .find(|s| idents_of_path == *s)
+    .and_then(|_| path.segments.last())
 }
 
 fn extract_type_from_option(ty: &syn::Type) -> Option<&syn::Type> {
     extract_type_path(ty)
-        .and_then(extract_option_segment)
+        .and_then(extract_option_declaration_segment)
         .and_then(|path_seg| {
             let type_params = &path_seg.arguments;
             // It should have only on angle-bracketed param ("<String>"):
@@ -285,6 +323,40 @@ fn extract_type_from_option(ty: &syn::Type) -> Option<&syn::Type> {
             GenericArgument::Type(ref ty) => Some(ty),
             _ => None,
         })
+}
+
+fn is_option_wrapped(expr: &syn::Expr) -> bool {
+    match expr {
+        Expr::Call(call) => {
+
+            let mut func_name_valid = false;
+            if let Expr::Path(path) = call.func.as_ref() {
+                if let Some(segment) = extract_option_segment(&path.path) {
+                    if segment.ident == "Some" {
+                        func_name_valid = true
+                    }
+                }
+            }
+
+            return call.args.len() == 1 && func_name_valid
+        },
+        Expr::Path(path) => {
+            if path.qself.is_some() {
+                return false;
+            }
+
+            if let Some(segment) = extract_option_segment(&path.path) {
+                if segment.ident == "None" {
+                    if let PathArguments::None = segment.arguments {
+                        return true;
+                    }
+                }
+            }
+        }
+        _ => (),
+    };
+
+    false
 }
 
 fn parse_enum_attributes<'f>(

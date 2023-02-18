@@ -19,6 +19,9 @@ enum Enum2 {
     Variant1,
 
     Variant2,
+
+    #[attr(a = None)]
+    Variant3,
 }
 
 #[test]
@@ -36,4 +39,5 @@ fn test_attribute_default() {
 fn test_attribute_options() {
     assert_eq!(Enum2::Variant1.get_a(), Some(5));
     assert!(Enum2::Variant2.get_a().is_none());
+    assert!(Enum2::Variant3.get_a().is_none());
 }
