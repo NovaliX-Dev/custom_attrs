@@ -7,7 +7,7 @@
 //! Add this to your `Cargo.toml` file :
 //! ```toml
 //! [dependencies]
-//! custom_attrs = "1.2"
+//! custom_attrs = "1.3"
 //! ```
 //!
 //! Then you can use the `derive` attribute to use the library.
@@ -31,6 +31,16 @@
 //! ```rust, ignore
 //! #[attr(name: u32)]
 //! ```
+//! 
+//! You can declare many attribute declarations in a single `attr`.
+
+//! ```rust, ignore
+//! #[attr(
+//!     name: u32,
+//!     name2: usize
+//! )]
+//! enum Enum {}
+//! ```
 //!
 //! Optionally, you can add more components.
 //!
@@ -49,12 +59,8 @@
 //! You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 //!
 //! ```rust, ignore
-//! #[attr(name: Option<u32>)]
-//! enum Enum {}
-//! ```
-//!
-//! ```rust, ignore
-//! #[attr(name: u32 = 3)]
+//! #[attr(optional: Option<u32>)]
+//! #[attr(with_default: u32 = 3)]
 //! enum Enum {}
 //! ```
 //!
@@ -66,6 +72,18 @@
 //! ```rust, ignore
 //! enum Enum {
 //!     #[attr(name = 4)]
+//!     VariantA
+//! }
+//! ```
+//! 
+//! Like declarations, you can set many values at once.
+
+//! ```rust, ignore
+//! enum Enum {
+//!     #[attr(
+//!         name = 4,
+//!         name2 = 1
+//!     )]
 //!     VariantA
 //! }
 //! ```
@@ -107,6 +125,13 @@
 //!     #[attr(a = 3)]
 //!     #[attr(c = "Hello again !")]
 //!     Variant2,
+//! 
+//!     #[attr(
+//!         a = 1,
+//!         b = 5,
+//!         c = "Hello for the last time !"
+//!     )]
+//!     Variant3
 //! }
 //!
 //! ```
@@ -147,8 +172,19 @@ mod derive;
 ///
 /// ```rust, ignore
 /// #[attr(name: u32)]
+/// enum Enum {}
 /// ```
 ///
+///  You can declare many attribute declarations in a single `attr`.
+
+/// ```rust, ignore
+/// #[attr(
+///     name: u32,
+///     name2: usize
+/// )]
+/// enum Enum {}
+/// ```
+/// 
 /// Optionally, you can add more components.
 ///
 /// ### Optional components
@@ -166,12 +202,8 @@ mod derive;
 /// You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 ///
 /// ```rust, ignore
-/// #[attr(name: Option<u32>)]
-/// enum Enum {}
-/// ```
-///
-/// ```rust, ignore
-/// #[attr(name: u32 = 3)]
+/// #[attr(optional: Option<u32>)]
+/// #[attr(with_default: u32 = 3)]
 /// enum Enum {}
 /// ```
 ///
@@ -187,6 +219,18 @@ mod derive;
 /// }
 /// ```
 ///
+/// Like declarations, you can set many values at once.
+
+/// ```rust, ignore
+/// enum Enum {
+///     #[attr(
+///         name = 4,
+///         name2 = 1
+///     )]
+///     VariantA
+/// }
+/// ```
+/// 
 /// If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
 ///
 /// ```rust, ignore
@@ -224,6 +268,13 @@ mod derive;
 ///     #[attr(a = 3)]
 ///     #[attr(c = "Hello again !")]
 ///     Variant2,
+/// 
+///     #[attr(
+///         a = 1,
+///         b = 5,
+///         c = "Hello for the last time !"
+///     )]
+///     Variant3
 /// }
 ///
 /// fn main() {

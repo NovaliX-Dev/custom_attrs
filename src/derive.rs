@@ -4,9 +4,9 @@ use quote::{format_ident, quote, ToTokens};
 use syn::{
     parse::Parse,
     punctuated::Punctuated,
-    token::{Comma, CustomToken},
+    token::{Comma, CustomToken, self},
     DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment, Token, Type,
-    Variant, Visibility,
+    Variant, Visibility, parenthesized,
 };
 
 macro_rules! unwrap_opt_or_continue {
@@ -45,6 +45,22 @@ impl CustomToken for AttributeDefaultValue {
 
     fn display() -> &'static str {
         todo!()
+    }
+}
+
+struct ParenList<T> {
+    _paren: token::Paren,
+    elements: Punctuated<T, Comma>
+}
+
+impl<T: Parse> Parse for ParenList<T> {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let content;
+
+        Ok(Self {
+            _paren: parenthesized!(content in input),
+            elements: content.parse_terminated(T::parse)?
+        })
     }
 }
 
@@ -369,24 +385,26 @@ fn parse_enum_attributes<'f>(
 
         match attr_ident.to_string().as_str() {
             "attr" => {
-                let res = attr.parse_args();
+                let res = syn::parse2(attr.tokens.to_owned());
                 if let Err(e) = res {
                     emit_error!(e.span(), e);
                     continue;
                 }
 
-                let attr: AttributeDeclaration = res.unwrap();
+                let declaration_list: ParenList<AttributeDeclaration> = res.unwrap();
 
-                let match_ = attribute_declarations
+                for declaration in declaration_list.elements {
+                    let match_ = attribute_declarations
                     .iter()
-                    .find(|attr2| attr.ident == attr2.ident);
+                    .find(|attr2| declaration.ident == attr2.ident);
 
-                if match_.is_some() {
-                    emit_error!(attr.ident, "This attribute is already declared.");
-                    continue;
+                    if match_.is_some() {
+                        emit_error!(declaration.ident, "This attribute is already declared.");
+                        continue;
+                    }
+
+                    attribute_declarations.push(declaration);
                 }
-
-                attribute_declarations.push(attr);
             }
 
             _ => continue,
@@ -407,13 +425,15 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> 
 
         match attr_ident.to_string().as_str() {
             "attr" => {
-                let res = attr.parse_args::<AttributeValueAssignment>();
+                let res = syn::parse2(attr.tokens.to_owned());
                 if let Err(e) = res {
                     emit_error!(e.span(), e);
                     continue;
                 }
 
-                variant_attrs.push(res.unwrap());
+                let list: ParenList<AttributeValueAssignment> = res.unwrap();
+
+                variant_attrs.extend(list.elements.into_iter());
             }
             _ => continue,
         }

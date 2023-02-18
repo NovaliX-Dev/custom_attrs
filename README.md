@@ -13,7 +13,7 @@ A library that allows you to configure values specific to each variants of an en
 Add this to your `Cargo.toml` file :
 ```toml
 [dependencies]
-custom_attrs = "1.2"
+custom_attrs = "1.3"
 ```
 
 Then you can use the `derive` attribute to use the library.
@@ -36,6 +36,17 @@ By default, an attribute declaration is composed of two parts : an attribute's n
 
 ```rust
 #[attr(name: u32)]
+enum Enum {}
+```
+
+You can declare many attribute declarations in a single `attr`.
+
+```rust
+#[attr(
+    name: u32,
+    name2: usize
+)]
+enum Enum {}
 ```
 
 Optionally, you can add more components.
@@ -76,6 +87,18 @@ enum Enum {
 }
 ```
 
+Like declarations, you can set many values at once.
+
+```rust
+enum Enum {
+    #[attr(
+        name = 4,
+        name2 = 1
+    )]
+    VariantA
+}
+```
+
 If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
 
 ```rust
@@ -112,6 +135,13 @@ enum Enum {
     #[attr(a = 3)]
     #[attr(c = "Hello again !")]
     Variant2,
+
+    #[attr(
+        a = 1,
+        b = 5,
+        c = "Hello for the last time !"
+    )]
+    Variant3
 }
 ```
 
