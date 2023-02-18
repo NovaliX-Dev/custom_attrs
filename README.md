@@ -1,11 +1,5 @@
 # Custom Attrs
 
-[![Build](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml/badge.svg)](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/build.yml)
-[![Tests](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/tests.yml/badge.svg)](https://github.com/NovaliX-Dev/custom_attrs/actions/workflows/tests.yml)
-[![Crates.io](https://img.shields.io/crates/v/custom_attrs.svg)](https://crates.io/crates/custom_attrs)
-[![License](https://img.shields.io/crates/l/custom_attrs.svg)](./LICENSE)
-[![Documentation](https://docs.rs/custom_attrs/badge.svg)](https://docs.rs/custom_attrs)
-
 A library that allows you to configure values specific to each variants of an enum.
 
 ## Installation and Usage
@@ -16,9 +10,23 @@ Add this to your `Cargo.toml` file :
 custom_attrs = "1.2.2"
 ```
 
+Then you can use the `derive` attribute to use the library.
+
+```rust
+use custom_attrs::CustomAttrs;
+
+#[derive(CustomAttrs)]
+
+// all attributes declarations will be here.
+
+enum Enum {
+    // ...
+}
+```
+
 ### Attribute declaration.
 
-By default, an attribute declaration is composed of two parts : the attribute's name and it's type.
+By default, an attribute declaration is composed of two parts : attribute's name and it's type.
 
 ```rust
 #[attr(name: u32)]
@@ -28,17 +36,17 @@ Optionally, you can add more components.
 
 ### Optional components
 
-You can set the visibility of the attribute. This will change the visibility of the getter function.
+You can set the visibility of the attribute. This will change the bility of the getter function.
 
 ```rust
 #[attr(pub name: u32)]
 enum Enum {}
 ```
 
-By default, each attribute declared require a value to be set for each variant.
-If this requirement is not set, this library will produce an error.
+By default, each attribute declared require a value to be set for  variant.
+If this requirement is not set, this library will produce an r.
 
-You can disable this behavior by making it optional, by writing the type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
+You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the ibute declaration. See the example below.
 
 ```rust
 #[attr(name: Option<u32>)]
@@ -52,7 +60,7 @@ enum Enum {}
 
 ### Setting a value
 
-To set a value for a variant, just add the name of the attribute followed by the value you want to assign it.
+To set a value for a variant, just add the name of the attribute owed by the value you want to assign it.
 
 
 ```rust
@@ -62,7 +70,7 @@ enum Enum {
 }
 ```
 
-If the attribute is optional, you don't have to wrap you value into a `Some`. `custom_attrs` will do it for you. If you want the value to be `None`, just put `None` behind the value.
+If the attribute is optional, you don't have to wrap you value  a `Some`. `custom_attrs` will do it for you. If you want the e to be `None`, just put `None` behind the value.
 
 ```rust
 enum Enum {
@@ -76,7 +84,7 @@ enum Enum {
 
 ## Examples
 
-```Rust
+```rust
 use custom_attrs::CustomAttrs;
 
 // ...
@@ -86,7 +94,7 @@ use custom_attrs::CustomAttrs;
 // set the attributes
 #[attr(pub a: usize)]
 #[attr(b: Option<usize>)] // attributes can be optional
-#[attr(c: &'static str = "Hello world!")] // and can also have default values
+#[attr(c: &'static str = "Hello world!")] // and can also have ult values
 enum Enum {
     #[attr(a = 5)]
     #[attr(b = 3)]
