@@ -192,7 +192,6 @@ impl AttributeConfig {
 
             match ident.to_string().as_str() {
                 "doc" => self_.parse_documentation(attr),
-                "doc::disable_format" => (),
 
                 _ => match attr.parse_meta() {
                     Ok(_) => emit_error!(ident, "Unknown config."),
