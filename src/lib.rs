@@ -31,7 +31,7 @@
 //! ```rust, ignore
 //! #[attr(name: u32)]
 //! ```
-//! 
+//!
 //! You can declare many attribute declarations in a single `attr`.
 
 //! ```rust, ignore
@@ -75,7 +75,7 @@
 //!     VariantA
 //! }
 //! ```
-//! 
+//!
 //! Like declarations, you can set many values at once.
 
 //! ```rust, ignore
@@ -103,12 +103,12 @@
 //!     VariantC,
 //! }
 //! ```
-//! 
+//!
 //! ### Getting a value attribute
 //!
 //! To get the value from a variant, simple call `get_<attribute name>`.
-//! 
-//! ```rust
+//!
+//! ```rust, ignore
 //! Element::VariantA.get_a();
 //! ```
 //!
@@ -133,7 +133,7 @@
 //!     #[attr(a = 3)]
 //!     #[attr(c = "Hello again !")]
 //!     Variant2,
-//! 
+//!
 //!     #[attr(
 //!         a = 1,
 //!         b = 5,
@@ -155,6 +155,7 @@ use proc_macro_error::proc_macro_error;
 use syn::DeriveInput;
 
 mod derive;
+mod opt;
 
 /// The main trait of the library.
 ///
@@ -192,7 +193,7 @@ mod derive;
 /// )]
 /// enum Enum {}
 /// ```
-/// 
+///
 /// Optionally, you can add more components.
 ///
 /// ### Optional components
@@ -238,7 +239,7 @@ mod derive;
 ///     VariantA
 /// }
 /// ```
-/// 
+///
 /// If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
 ///
 /// ```rust, ignore
@@ -258,11 +259,11 @@ mod derive;
 /// ### Getting a value attribute
 ///
 /// To get the value from a variant, simple call `get_<attribute name>`.
-/// 
-/// ```rust
+///
+/// ```rust, ignore
 /// Element::VariantA.get_a();
 /// ```
-/// 
+///
 /// ## Examples
 ///
 /// ```rust
@@ -284,7 +285,7 @@ mod derive;
 ///     #[attr(a = 3)]
 ///     #[attr(c = "Hello again !")]
 ///     Variant2,
-/// 
+///
 ///     #[attr(
 ///         a = 1,
 ///         b = 5,

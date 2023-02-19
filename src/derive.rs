@@ -2,12 +2,14 @@ use proc_macro2::Ident;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
 use quote::{format_ident, quote, ToTokens};
 use syn::{
+    parenthesized,
     parse::Parse,
     punctuated::Punctuated,
-    token::{Comma, CustomToken, self},
-    DataEnum, DeriveInput, Expr, GenericArgument, Path, PathArguments, PathSegment, Token, Type,
-    Variant, Visibility, parenthesized,
+    token::{self, Comma, CustomToken},
+    DataEnum, DeriveInput, Expr, Token, Type, Variant, Visibility,
 };
+
+use crate::opt::{extract_type_from_option, is_option_wrapped};
 
 macro_rules! unwrap_opt_or_continue {
     ($expr: expr) => {{
@@ -50,7 +52,7 @@ impl CustomToken for AttributeDefaultValue {
 
 struct ParenList<T> {
     _paren: token::Paren,
-    elements: Punctuated<T, Comma>
+    elements: Punctuated<T, Comma>,
 }
 
 impl<T: Parse> Parse for ParenList<T> {
@@ -59,7 +61,7 @@ impl<T: Parse> Parse for ParenList<T> {
 
         Ok(Self {
             _paren: parenthesized!(content in input),
-            elements: content.parse_terminated(T::parse)?
+            elements: content.parse_terminated(T::parse)?,
         })
     }
 }
@@ -278,102 +280,6 @@ impl<'f> ToTokens for Attribute<'f> {
     }
 }
 
-fn extract_type_path(ty: &syn::Type) -> Option<&Path> {
-    match *ty {
-        syn::Type::Path(ref typepath) if typepath.qself.is_none() => Some(&typepath.path),
-        _ => None,
-    }
-}
-
-fn extract_option_declaration_segment(path: &Path) -> Option<&PathSegment> {
-    let idents_of_path = path
-        .segments
-        .iter()
-        .into_iter()
-        .fold(String::new(), |mut acc, v| {
-            acc.push_str(&v.ident.to_string());
-            acc.push('|');
-            acc
-        });
-    vec!["Option|", "std|option|Option", "core|option|Option"]
-        .into_iter()
-        .find(|s| idents_of_path == *s)
-        .and_then(|_| path.segments.last())
-}
-
-fn extract_option_segment(path: &Path) -> Option<&PathSegment> {
-    let idents_of_path = path
-        .segments
-        .iter()
-        .into_iter()
-        .fold(String::new(), |mut acc, v| {
-            acc.push_str(&v.ident.to_string());
-            acc.push('|');
-            acc
-        });
-    vec![
-        "Some|",
-        "None|",
-        "std|option|Option|Some|",
-        "std|option|Option|None|",
-        "core|option|Option|Some|",
-        "core|option|Option|None|",
-    ]
-    .into_iter()
-    .find(|s| idents_of_path == *s)
-    .and_then(|_| path.segments.last())
-}
-
-fn extract_type_from_option(ty: &syn::Type) -> Option<&syn::Type> {
-    extract_type_path(ty)
-        .and_then(extract_option_declaration_segment)
-        .and_then(|path_seg| {
-            let type_params = &path_seg.arguments;
-            // It should have only on angle-bracketed param ("<String>"):
-            match *type_params {
-                PathArguments::AngleBracketed(ref params) => params.args.first(),
-                _ => None,
-            }
-        })
-        .and_then(|generic_arg| match *generic_arg {
-            GenericArgument::Type(ref ty) => Some(ty),
-            _ => None,
-        })
-}
-
-fn is_option_wrapped(expr: &syn::Expr) -> bool {
-    match expr {
-        Expr::Call(call) => {
-            let mut func_name_valid = false;
-            if let Expr::Path(path) = call.func.as_ref() {
-                if let Some(segment) = extract_option_segment(&path.path) {
-                    if segment.ident == "Some" {
-                        func_name_valid = true
-                    }
-                }
-            }
-
-            return call.args.len() == 1 && func_name_valid;
-        }
-        Expr::Path(path) => {
-            if path.qself.is_some() {
-                return false;
-            }
-
-            if let Some(segment) = extract_option_segment(&path.path) {
-                if segment.ident == "None" {
-                    if let PathArguments::None = segment.arguments {
-                        return true;
-                    }
-                }
-            }
-        }
-        _ => (),
-    };
-
-    false
-}
-
 fn parse_enum_attributes<'f>(
     attrs: &[syn::Attribute],
     data_enum: &'f DataEnum,
@@ -395,8 +301,8 @@ fn parse_enum_attributes<'f>(
 
                 for declaration in declaration_list.elements {
                     let match_ = attribute_declarations
-                    .iter()
-                    .find(|attr2| declaration.ident == attr2.ident);
+                        .iter()
+                        .find(|attr2| declaration.ident == attr2.ident);
 
                     if match_.is_some() {
                         emit_error!(declaration.ident, "This attribute is already declared.");
