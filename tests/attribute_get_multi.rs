@@ -6,10 +6,7 @@ use custom_attrs::CustomAttrs;
     b: usize
 )]
 enum Enum {
-    #[attr(
-        a = 5,
-        b = 2
-    )]
+    #[attr(a = 5, b = 2)]
     Variant1,
 
     #[attr(a = 3)]
@@ -24,10 +21,7 @@ enum Enum {
 #[attr(pub a: Option<usize>)]
 #[attr(pub b: Option<usize>)]
 enum Enum2 {
-    #[attr(
-        a = 5, 
-        b = 3
-    )]
+    #[attr(a = 5, b = 3)]
     Variant1,
 
     Variant2,
