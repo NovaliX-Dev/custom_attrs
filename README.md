@@ -13,7 +13,7 @@ A library that allows you to configure values specific to each variants of an en
 Add this to your `Cargo.toml` file :
 ```toml
 [dependencies]
-custom_attrs = "1.3"
+custom_attrs = "1.4"
 ```
 
 Then you can use the `derive` attribute to use the library.
@@ -75,6 +75,16 @@ enum Enum {}
 enum Enum {}
 ```
 
+You can add documentation avoid declared attributes. This documentation will override the one of the getter function.
+
+```rust
+#[attr(
+    /// Attribute documentation
+    attribute: u32
+)]
+enum Enum {}
+```
+
 ### Setting a value
 
 To set a value for a variant, just add the name of the attribute followed by the value you want to set.
@@ -122,6 +132,8 @@ To get the value from a variant, simple call `get_<attribute name>`.
 ```rust
 Element::VariantA.get_a();
 ```
+
+If you've set a documentation on the attribute, it will be shown on this function.
 
 ## Examples
 

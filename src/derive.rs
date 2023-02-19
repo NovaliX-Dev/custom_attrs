@@ -67,6 +67,7 @@ impl<T: Parse> Parse for ParenList<T> {
 }
 
 struct AttributeDeclaration {
+    attributes: Vec<syn::Attribute>,
     vis: Visibility,
     ident: Ident,
     _colon: Token!(:),
@@ -77,6 +78,7 @@ struct AttributeDeclaration {
 impl Parse for AttributeDeclaration {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
+            attributes: input.call(syn::Attribute::parse_outer)?,
             vis: input.parse()?,
             ident: input.parse()?,
             _colon: input.parse()?,
@@ -170,12 +172,73 @@ enum TypeState {
     Optional(Type),
 }
 
+#[derive(Default)]
+struct AttributeConfig {
+    comment: String,
+}
+
+impl AttributeConfig {
+    fn new(attributes: Vec<syn::Attribute>) -> Self {
+        let mut self_ = Self::default();
+
+        for attr in attributes {
+            let ident = match attr.path.get_ident() {
+                Some(ident) => ident,
+                None => {
+                    emit_error!(attr.path, "Invalid config name syntax.");
+                    continue;
+                }
+            };
+
+            match ident.to_string().as_str() {
+                "doc" => self_.parse_documentation(attr),
+                "doc::disable_format" => (),
+
+                _ => match attr.parse_meta() {
+                    Ok(_) => emit_error!(ident, "Unknown config."),
+                    Err(e) => emit_error!(e.span(), e),
+                },
+            }
+        }
+
+        self_
+    }
+
+    fn parse_documentation(&mut self, attr: syn::Attribute) {
+        let nv = match attr.parse_meta() {
+            Ok(syn::Meta::NameValue(nv)) => nv,
+            Ok(meta) => {
+                emit_error!(
+                    meta,
+                    "Wrong documentation syntax. The right syntax is `#[doc = <literal string>]`."
+                );
+                return;
+            }
+            Err(e) => {
+                emit_error!(e.span(), e);
+                return;
+            }
+        };
+
+        match nv.lit {
+            syn::Lit::Str(str) => {
+                if !self.comment.is_empty() {
+                    self.comment.push('\n');
+                }
+                self.comment += str.value().as_str();
+            }
+            _ => emit_error!(nv.lit, "Expected a string literal."),
+        }
+    }
+}
+
 struct Attribute<'f> {
     vis: Visibility,
     ident: Ident,
     type_: TypeState,
     values: Vec<AttributeValue<'f>>,
     default: Option<Expr>,
+    config: AttributeConfig,
 }
 
 impl<'f> Attribute<'f> {
@@ -191,12 +254,15 @@ impl<'f> Attribute<'f> {
             .map(|f| AttributeValue::new(&f.ident, type_state.to_owned()))
             .collect();
 
+        let config = AttributeConfig::new(declaration.attributes);
+
         Self {
             vis: declaration.vis,
             ident: declaration.ident,
             type_: type_state,
             values,
             default: declaration.default_value.map(|default| default.value),
+            config,
         }
     }
 
@@ -268,7 +334,10 @@ impl<'f> ToTokens for Attribute<'f> {
             }
         };
 
+        let comment = &self.config.comment;
+
         let tokens = quote! {
+            #[doc = #comment]
             #vis fn #function_name(&self) -> #type_ {
                 #(#values)*
 
