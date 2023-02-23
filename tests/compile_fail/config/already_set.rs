@@ -3,12 +3,9 @@ use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
 #[attr(
-    /// Should pass
+    #[function = "a", function = "b"]
+    #[function = "c"]
     
-    #[wrong::syntax]
-    #[wrong(syntax)]
-
-    #[unrecognized = "value"]
     pub a: usize
 )]
 enum Enum {

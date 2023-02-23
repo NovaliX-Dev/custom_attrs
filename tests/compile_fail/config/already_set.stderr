@@ -1,0 +1,17 @@
+error: This config is already set.
+ --> tests/compile_fail/config/already_set.rs:6:23
+  |
+6 |     #[function = "a", function = "b"]
+  |                       ^^^^^^^^^^^^^^
+
+error: Value for config `function` is already set here.
+ --> tests/compile_fail/config/already_set.rs:6:18
+  |
+6 |     #[function = "a", function = "b"]
+  |                  ^^^
+
+error: This config is already set.
+ --> tests/compile_fail/config/already_set.rs:7:7
+  |
+7 |     #[function = "c"]
+  |       ^^^^^^^^^^^^^^

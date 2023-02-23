@@ -13,7 +13,7 @@ A library that allows you to configure values specific to each variants of an en
 Add this to your `Cargo.toml` file :
 ```toml
 [dependencies]
-custom_attrs = "1.4"
+custom_attrs = "1.5"
 ```
 
 Then you can use the `derive` attribute to use the library.
@@ -125,9 +125,41 @@ enum Enum {
 }
 ```
 
+### Attribute properties
+
+You can add properties to attributes to defines their characteristics. Even the documentation, in itself, is a property.
+
+The syntax of a property is the following :
+```rust, ignore
+#[attr(
+    #[<config_name> = <value>]
+    <attribute>: <type>
+)]
+```
+
+Configs can also be flags: 
+```rust, ignore
+#[attr(
+    #[<config_name>]
+    <attribute>: <type>
+)]
+```
+
+Like attributes, you can define many properties in one bloc:
+```rust, ignore
+#[attr(
+    #[<config_name>, <config_name2> = <value>]
+    <attribute>: <type>
+])
+```
+
+Here is a list of all the properties :
+- `function` : defines the name of the function to get the attribute
+
 ### Getting a value attribute
 
-To get the value from a variant, simple call `get_<attribute name>`.
+To get the value from a variant, simple call `get_<attribute name>` or the name
+/// you've set in the properties of the attributes.
 
 ```rust
 Element::VariantA.get_a();
@@ -144,7 +176,10 @@ use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
 
-#[attr(pub a: usize)]
+#[attr(
+    #[function = "a_getter"]
+    pub a: usize
+)]
 #[attr(b: Option<usize>)]
 #[attr(c: &'static str = "Hello world!")]
 enum Enum {
@@ -162,6 +197,11 @@ enum Enum {
         c = "Hello for the last time !"
     )]
     Variant3
+}
+
+fn main() {
+    Enum::Variant1.a_getter(); // custom getter name
+    Enum::Variant2.get_b(); // default getter name
 }
 ```
 

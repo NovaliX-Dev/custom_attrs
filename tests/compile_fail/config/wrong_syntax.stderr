@@ -1,0 +1,5 @@
+error: Expected `function = ...`
+ --> tests/compile_fail/config/wrong_syntax.rs:6:7
+  |
+6 |     #[function]
+  |       ^^^^^^^^

@@ -1,4 +1,5 @@
-use cfg_if::cfg_if;
+use std::collections::HashMap;
+
 use proc_macro2::Ident;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
 use quote::{format_ident, quote, ToTokens};
@@ -7,18 +8,19 @@ use syn::{
     parse::Parse,
     punctuated::Punctuated,
     token::{self, Comma},
-    DataEnum, DeriveInput, Expr, Token, Type, Variant, Visibility,
+    DataEnum, DeriveInput, Expr, Token, Type, Variant, Visibility, LitStr,
 };
 
 use crate::{
+    config::{Config, ConfigDeclarationList},
     opt::{extract_type_from_option, is_option_wrapped},
-    value::{AttributeValueAssignment, ValueAssignment},
+    value::{IdentValueAssignment, ValueAssignment},
 };
 
 macro_rules! error_duplicate {
     ($span1: expr, $error1: expr $(, $error1fragments: expr)*;
      $span2: expr, $error2: expr $(, $error2fragments: expr)*) => {
-        cfg_if! {
+        cfg_if::cfg_if! {
             if #[cfg(help_span)] {
                 emit_error!(
                     $span1, $error1 $(, $error1fragments)*;
@@ -31,6 +33,8 @@ macro_rules! error_duplicate {
         }
     };
 }
+
+pub(crate) use error_duplicate;
 
 macro_rules! unwrap_opt_or_continue {
     ($expr: expr) => {{
@@ -59,7 +63,7 @@ impl<T: Parse> Parse for ParenList<T> {
 }
 
 struct AttributeDeclaration {
-    attributes: Vec<syn::Attribute>,
+    attributes: Vec<ConfigDeclarationList>,
     vis: Visibility,
     ident: Ident,
     _colon: Token!(:),
@@ -70,7 +74,7 @@ struct AttributeDeclaration {
 impl Parse for AttributeDeclaration {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
-            attributes: input.call(syn::Attribute::parse_outer)?,
+            attributes: input.call(ConfigDeclarationList::parse_all)?,
             vis: input.parse()?,
             ident: input.parse()?,
             _colon: input.parse()?,
@@ -140,72 +144,13 @@ enum TypeState {
     Optional(Type),
 }
 
-#[derive(Default)]
-struct AttributeConfig {
-    comment: String,
-}
-
-impl AttributeConfig {
-    fn new(attributes: Vec<syn::Attribute>) -> Self {
-        let mut self_ = Self::default();
-
-        for attr in attributes {
-            let ident = match attr.path.get_ident() {
-                Some(ident) => ident,
-                None => {
-                    emit_error!(attr.path, "Invalid config name syntax.");
-                    continue;
-                }
-            };
-
-            match ident.to_string().as_str() {
-                "doc" => self_.parse_documentation(attr),
-
-                _ => match attr.parse_meta() {
-                    Ok(_) => emit_error!(ident, "Unknown config."),
-                    Err(e) => emit_error!(e.span(), e),
-                },
-            }
-        }
-
-        self_
-    }
-
-    fn parse_documentation(&mut self, attr: syn::Attribute) {
-        let nv = match attr.parse_meta() {
-            Ok(syn::Meta::NameValue(nv)) => nv,
-            Ok(meta) => {
-                emit_error!(
-                    meta,
-                    "Wrong documentation syntax. The right syntax is `#[doc = <literal string>]`."
-                );
-                return;
-            }
-            Err(e) => {
-                emit_error!(e.span(), e);
-                return;
-            }
-        };
-
-        match nv.lit {
-            syn::Lit::Str(str) => {
-                if !self.comment.is_empty() {
-                    self.comment.push('\n');
-                }
-                self.comment += str.value().as_str();
-            }
-            _ => emit_error!(nv.lit, "Expected a string literal."),
-        }
-    }
-}
-
 struct Attribute<'f> {
     vis: Visibility,
     ident: Ident,
     type_: TypeState,
     values: Vec<AttributeValue<'f>>,
     default: Option<Expr>,
-    config: AttributeConfig,
+    config: Config,
 }
 
 impl<'f> Attribute<'f> {
@@ -221,7 +166,7 @@ impl<'f> Attribute<'f> {
             .map(|f| AttributeValue::new(&f.ident, type_state.to_owned()))
             .collect();
 
-        let config = AttributeConfig::new(declaration.attributes);
+        let config = Config::new(declaration.attributes);
 
         Self {
             vis: declaration.vis,
@@ -235,7 +180,7 @@ impl<'f> Attribute<'f> {
         }
     }
 
-    fn set(&mut self, ident: &Ident, value: AttributeValueAssignment) {
+    fn set(&mut self, ident: &Ident, value: IdentValueAssignment) {
         let attr_value = self
             .values
             .iter_mut()
@@ -274,7 +219,7 @@ impl<'f> Attribute<'f> {
 
 impl<'f> ToTokens for Attribute<'f> {
     fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
-        let function_name = format_ident!("get_{}", self.ident);
+        let function_name = self.config.function_name().unwrap_or(format_ident!("get_{}", self.ident));
 
         let vis = &self.vis;
         let type_ = match &self.type_ {
@@ -302,7 +247,7 @@ impl<'f> ToTokens for Attribute<'f> {
             }
         };
 
-        let comment = &self.config.comment;
+        let comment = self.config.comment();
 
         let tokens = quote! {
             #[doc = #comment]
@@ -364,7 +309,7 @@ fn parse_enum_attributes<'f>(
         .collect()
 }
 
-fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> {
+fn parse_variant_attributes(variant: &Variant) -> Vec<IdentValueAssignment> {
     let mut variant_attrs = Vec::new();
 
     for attr in &variant.attrs {
@@ -378,7 +323,7 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> 
                     continue;
                 }
 
-                let list: ParenList<AttributeValueAssignment> = res.unwrap();
+                let list: ParenList<IdentValueAssignment> = res.unwrap();
 
                 variant_attrs.extend(list.elements.into_iter());
             }
@@ -387,6 +332,24 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> 
     }
 
     variant_attrs
+}
+
+fn check_for_conflicts(attrs: &[Attribute]) {
+    let mut before = HashMap::<&LitStr, &Attribute>::new();
+    for attr in attrs.iter().filter(|a| a.config.function_name_lit().is_some()) {
+        let lit = attr.config.function_name_lit().unwrap();
+        
+        if let Some((lit2, attr2)) = before.get_key_value(lit) {
+            error_duplicate!(
+                lit, "The attribute `{}` already use this function name.", attr2.ident;
+                lit2, "First use of `{}` here.", lit.value()
+            );
+
+            continue;
+        }
+
+        before.insert(lit, attr);
+    }
 }
 
 pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
@@ -421,6 +384,10 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
     for attr in attributes.iter() {
         attr.check();
     }
+
+    abort_if_dirty();
+
+    check_for_conflicts(&attributes);
 
     abort_if_dirty();
 

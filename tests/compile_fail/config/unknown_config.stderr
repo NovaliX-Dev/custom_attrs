@@ -1,0 +1,17 @@
+error: Unknown config.
+ --> tests/compile_fail/config/unknown_config.rs:8:7
+  |
+8 |     #[unknown = "", another_unknown = ""]
+  |       ^^^^^^^
+
+error: Unknown config.
+ --> tests/compile_fail/config/unknown_config.rs:8:21
+  |
+8 |     #[unknown = "", another_unknown = ""]
+  |                     ^^^^^^^^^^^^^^^
+
+error: Unknown config.
+ --> tests/compile_fail/config/unknown_config.rs:9:7
+  |
+9 |     #[unknown2]
+  |       ^^^^^^^^

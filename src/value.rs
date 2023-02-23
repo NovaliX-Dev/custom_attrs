@@ -1,14 +1,15 @@
 use quote::ToTokens;
-use syn::{parse::Parse, token::CustomToken, Expr, Ident, Token};
+use syn::{parse::Parse, token::CustomToken, Expr, Ident, Path, Token};
 
-pub type AttributeValueAssignment = AttributeValueAssignmentGeneric<Ident>;
+pub type IdentValueAssignment = IdentValueAssignmentGeneric<Ident>;
+pub type PathOptionalValueAssignment = IdentOptionalValueAssignmentGeneric<Path>;
 
-pub struct AttributeValueAssignmentGeneric<I> {
+pub struct IdentValueAssignmentGeneric<I> {
     ident: I,
     value: ValueAssignment,
 }
 
-impl<I> AttributeValueAssignmentGeneric<I> {
+impl<I> IdentValueAssignmentGeneric<I> {
     pub fn value(&self) -> &Expr {
         &self.value.value
     }
@@ -18,7 +19,7 @@ impl<I> AttributeValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: Parse> Parse for AttributeValueAssignmentGeneric<I> {
+impl<I: Parse> Parse for IdentValueAssignmentGeneric<I> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
             ident: input.parse()?,
@@ -27,7 +28,38 @@ impl<I: Parse> Parse for AttributeValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: ToTokens> ToTokens for AttributeValueAssignmentGeneric<I> {
+impl<I: ToTokens> ToTokens for IdentValueAssignmentGeneric<I> {
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        self.ident.to_tokens(tokens);
+        self.value.to_tokens(tokens);
+    }
+}
+
+pub struct IdentOptionalValueAssignmentGeneric<I> {
+    ident: I,
+    value: Option<ValueAssignment>,
+}
+
+impl<I> IdentOptionalValueAssignmentGeneric<I> {
+    pub fn value(&self) -> Option<&Expr> {
+        self.value.as_ref().map(|v| &v.value)
+    }
+
+    pub fn ident(&self) -> &I {
+        &self.ident
+    }
+}
+
+impl<I: Parse> Parse for IdentOptionalValueAssignmentGeneric<I> {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        Ok(Self {
+            ident: input.parse()?,
+            value: input.parse()?,
+        })
+    }
+}
+
+impl<I: ToTokens> ToTokens for IdentOptionalValueAssignmentGeneric<I> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.ident.to_tokens(tokens);
         self.value.to_tokens(tokens);

@@ -1,0 +1,5 @@
+error: The function name must not be empty.
+ --> tests/compile_fail/config/not_empty.rs:6:18
+  |
+6 |     #[function = ""]
+  |                  ^^

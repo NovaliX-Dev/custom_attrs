@@ -7,7 +7,7 @@
 //! Add this to your `Cargo.toml` file :
 //! ```toml
 //! [dependencies]
-//! custom_attrs = "1.4"
+//! custom_attrs = "1.5"
 //! ```
 //!
 //! Then you can use the `derive` attribute to use the library.
@@ -73,6 +73,37 @@
 //! )]
 //! enum Enum {}
 //! ```
+//! 
+//! ### Attribute properties
+//! 
+//! You can add properties to attributes to defines their characteristics. Even the documentation, in itself, is a property.
+//! 
+//! The syntax of a property is the following :
+//! ```rust, ignore
+//! #[attr(
+//!     #[<config_name> = <value>]
+//!     <attribute>: <type>
+//! )]
+//! ```
+//! 
+//! Configs can also be flags: 
+//! ```rust, ignore
+//! #[attr(
+//!     #[<config_name>]
+//!     <attribute>: <type>
+//! )]
+//! ```
+//! 
+//! Like attributes, you can define many properties in one bloc:
+//! ```rust, ignore
+//! #[attr(
+//!     #[<config_name>, <config_name2> = <value>]
+//!     <attribute>: <type>
+//! ])
+//! ```
+//! 
+//! Here is a list of all the properties :
+//! - `function` : defines the name of the function to get the attribute
 //!
 //! ### Setting a value
 //!
@@ -116,7 +147,8 @@
 //!
 //! ### Getting the value of an attribute
 //!
-//! To get the value from a variant, simple call `get_<attribute name>`.
+//! To get the value from a variant, simple call `get_<attribute name>` or the name
+//! you've set in the properties of the attributes.
 //!
 //! ```rust, ignore
 //! Element::VariantA.get_a();
@@ -134,7 +166,10 @@
 //! #[derive(CustomAttrs)]
 //!
 //! // set the attributes
-//! #[attr(pub a: usize)]
+//! #[attr(
+//!     #[function = "a_getter"]
+//!     pub a: usize
+//! )]
 //! #[attr(b: Option<usize>)] // attributes can be optional
 //! #[attr(c: &'static str = "Hello world!")] // and can also have ult values
 //! enum Enum {
@@ -152,6 +187,11 @@
 //!         c = "Hello for the last time !"
 //!     )]
 //!     Variant3
+//! }
+//! 
+//! fn main() {
+//!     Enum::Variant1.a_getter(); // custom getter name
+//!     Enum::Variant2.get_b(); // default getter name
 //! }
 //!
 //! ```
@@ -171,6 +211,7 @@ use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use syn::DeriveInput;
 
+mod config;
 mod derive;
 mod opt;
 mod value;
@@ -284,9 +325,41 @@ mod value;
 /// }
 /// ```
 ///
+/// ### Attribute properties
+/// 
+/// You can add properties to attributes to defines their characteristics. Even the documentation, in itself, is a property.
+/// 
+/// The syntax of a property is the following :
+/// ```rust, ignore
+/// #[attr(
+///     #[<config_name> = <value>]
+///     <attribute>: <type>
+/// )]
+/// ```
+/// 
+/// Configs can also be flags: 
+/// ```rust, ignore
+/// #[attr(
+///     #[<config_name>]
+///     <attribute>: <type>
+/// )]
+/// ```
+/// 
+/// Like attributes, you can define many properties in one bloc:
+/// ```rust, ignore
+/// #[attr(
+///     #[<config_name>, <config_name2> = <value>]
+///     <attribute>: <type>
+/// ])
+/// ```
+/// 
+/// Here is a list of all the properties :
+/// - `function` : defines the name of the function to get the attribute
+/// 
 /// ### Getting a value attribute
 ///
-/// To get the value from a variant, simple call `get_<attribute name>`.
+/// To get the value from a variant, simple call `get_<attribute name>` or the name
+/// you've set in the properties of the attributes.
 ///
 /// ```rust, ignore
 /// Element::VariantA.get_a();
@@ -304,7 +377,10 @@ mod value;
 /// #[derive(CustomAttrs)]
 ///
 /// // set the attributes
-/// #[attr(pub a: usize)]
+/// #[attr(
+///     #[function = "a_getter"]
+///     pub a: usize
+/// )]
 /// #[attr(b: Option<usize>)] // attributes can be optional
 /// #[attr(c: &'static str = "Hello world!")] // and can also have ult values
 /// enum Enum {
@@ -323,9 +399,10 @@ mod value;
 ///     )]
 ///     Variant3
 /// }
-///
+/// 
 /// fn main() {
-///     let a = Enum::Variant1.get_a();
+///     Enum::Variant1.a_getter(); // custom getter name
+///     Enum::Variant2.get_b(); // default getter name
 /// }
 /// ```
 ///

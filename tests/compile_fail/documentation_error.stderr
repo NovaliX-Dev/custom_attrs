@@ -4,7 +4,7 @@ error: Expected a string literal.
 8 |     #[doc = false]
   |             ^^^^^
 
-error: Wrong documentation syntax. The right syntax is `#[doc = <literal string>]`.
+error: Expected `doc = ...`
  --> tests/compile_fail/documentation_error.rs:9:7
   |
 9 |     #[doc]

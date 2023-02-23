@@ -1,0 +1,8 @@
+error[E0599]: no method named `get_a` found for enum `Enum` in the current scope
+  --> tests/compile_fail/function_name_changed.rs:18:28
+   |
+9  | enum Enum {
+   | --------- method `get_a` not found for this enum
+...
+18 |     let a = Enum::Variant1.get_a();
+   |                            ^^^^^ method not found in `Enum`

@@ -1,0 +1,11 @@
+error: The attribute `a` already use this function name.
+ --> tests/compile_fail/same_function_used.rs:9:18
+  |
+9 |     #[function = "another_function"]
+  |                  ^^^^^^^^^^^^^^^^^^
+
+error: First use of `another_function` here.
+ --> tests/compile_fail/same_function_used.rs:6:18
+  |
+6 |     #[function = "another_function"]
+  |                  ^^^^^^^^^^^^^^^^^^
