@@ -4,8 +4,20 @@ error: This attribute is already declared.
 5 | #[attr(pub a: usize)]
   |            ^
 
+error: `a` is already declared here.
+ --> tests/compile_fail/attribute_already_declared.rs:4:12
+  |
+4 | #[attr(pub a: usize)]
+  |            ^
+
 error: This attribute is already declared.
   --> tests/compile_fail/attribute_already_declared.rs:17:9
    |
 17 |     pub b: Option<usize>,
+   |         ^
+
+error: `b` is already declared here.
+  --> tests/compile_fail/attribute_already_declared.rs:16:9
+   |
+16 |     pub b: Option<usize>,
    |         ^

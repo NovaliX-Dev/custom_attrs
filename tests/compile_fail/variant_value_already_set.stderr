@@ -1,9 +1,3 @@
-error: First value of `a` is set here.
- --> tests/compile_fail/variant_value_already_set.rs:6:16
-  |
-6 |     #[attr(a = 5)]
-  |                ^
-
 error: The value is already set for this attribute.
  --> tests/compile_fail/variant_value_already_set.rs:7:12
   |
@@ -11,13 +5,19 @@ error: The value is already set for this attribute.
   |            ^^^^^
 
 error: First value of `a` is set here.
-  --> tests/compile_fail/variant_value_already_set.rs:11:13
-   |
-11 |         a = 3,
-   |             ^
+ --> tests/compile_fail/variant_value_already_set.rs:6:16
+  |
+6 |     #[attr(a = 5)]
+  |                ^
 
 error: The value is already set for this attribute.
   --> tests/compile_fail/variant_value_already_set.rs:12:9
    |
 12 |         a = 3
    |         ^^^^^
+
+error: First value of `a` is set here.
+  --> tests/compile_fail/variant_value_already_set.rs:11:13
+   |
+11 |         a = 3,
+   |             ^

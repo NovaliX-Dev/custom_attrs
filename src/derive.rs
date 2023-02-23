@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 use proc_macro2::Ident;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
 use quote::{format_ident, quote, ToTokens};
@@ -13,6 +14,23 @@ use crate::{
     opt::{extract_type_from_option, is_option_wrapped},
     value::{AttributeValueAssignment, ValueAssignment},
 };
+
+macro_rules! error_duplicate {
+    ($span1: expr, $error1: expr $(, $error1fragments: expr)*;
+     $span2: expr, $error2: expr $(, $error2fragments: expr)*) => {
+        cfg_if! {
+            if #[cfg(help_span)] {
+                emit_error!(
+                    $span1, $error1 $(, $error1fragments)*;
+                    help = $span2 => $error2 $(, $error2fragments)*
+                );
+            } else {
+                emit_error!($span1, $error1 $(, $error1fragments)*);
+                emit_error!($span2, $error2 $(, $error2fragments)*);
+            }
+        }
+    };
+}
 
 macro_rules! unwrap_opt_or_continue {
     ($expr: expr) => {{
@@ -227,11 +245,10 @@ impl<'f> Attribute<'f> {
         match attr_value.value {
             None => attr_value.value = Some(value.value().to_owned()),
             Some(ref value2) => {
-                emit_error!(
-                    value2,
-                    format!("First value of `{}` is set here.", self.ident)
+                error_duplicate!(
+                    value, "The value is already set for this attribute.";
+                    value2, "First value of `{}` is set here.", self.ident
                 );
-                emit_error!(value, "The value is already set for this attribute.")
             }
         }
     }
@@ -324,8 +341,12 @@ fn parse_enum_attributes<'f>(
                         .iter()
                         .find(|attr2| declaration.ident == attr2.ident);
 
-                    if match_.is_some() {
-                        emit_error!(declaration.ident, "This attribute is already declared.");
+                    if let Some(declaration2) = match_ {
+                        error_duplicate!(
+                            declaration.ident, "This attribute is already declared.";
+                            declaration2.ident, "`{}` is already declared here.", declaration2.ident
+                        );
+
                         continue;
                     }
 

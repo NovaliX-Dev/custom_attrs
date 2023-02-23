@@ -4,15 +4,19 @@ description = "A library that allows you to configure values specific to each va
 license = "MIT"
 repository = "https://github.com/NovaliX-Dev/custom_attrs"
 authors = ["NovaliX-Dev"]
-version = "1.4.1"
+version = "1.4.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+help_span = []
 
 [lib]
 proc-macro = true
 
 [dependencies]
+cfg-if = "1.0.0"
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.51"
 quote = "1.0.23"

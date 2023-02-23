@@ -158,6 +158,11 @@
 //!
 //! See the examples directory for more details.
 //!
+//! # Features
+//!
+//! - `help_span` : Merge main error and help notes, while these have they own span, and do not produce a separated error.
+//! This features is nightly only.
+//!
 //! # License
 //!
 //! Licensed under the MIT license.
