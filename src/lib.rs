@@ -168,6 +168,7 @@ use syn::DeriveInput;
 
 mod derive;
 mod opt;
+mod value;
 
 /// The main trait of the library.
 ///

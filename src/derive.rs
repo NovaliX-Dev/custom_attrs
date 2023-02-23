@@ -5,11 +5,14 @@ use syn::{
     parenthesized,
     parse::Parse,
     punctuated::Punctuated,
-    token::{self, Comma, CustomToken},
+    token::{self, Comma},
     DataEnum, DeriveInput, Expr, Token, Type, Variant, Visibility,
 };
 
-use crate::opt::{extract_type_from_option, is_option_wrapped};
+use crate::{
+    opt::{extract_type_from_option, is_option_wrapped},
+    value::{AttributeValueAssignment, ValueAssignment},
+};
 
 macro_rules! unwrap_opt_or_continue {
     ($expr: expr) => {{
@@ -19,35 +22,6 @@ macro_rules! unwrap_opt_or_continue {
         }
         res.unwrap()
     }};
-}
-
-struct AttributeDefaultValue {
-    _equal: Token!(=),
-    value: Expr,
-}
-
-impl Parse for AttributeDefaultValue {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            _equal: input.parse()?,
-            value: input.parse()?,
-        })
-    }
-}
-
-impl CustomToken for AttributeDefaultValue {
-    fn peek(cursor: syn::buffer::Cursor) -> bool {
-        if let Some((punct, _)) = cursor.punct() {
-            if punct.as_char() == '=' {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn display() -> &'static str {
-        todo!()
-    }
 }
 
 struct ParenList<T> {
@@ -72,7 +46,7 @@ struct AttributeDeclaration {
     ident: Ident,
     _colon: Token!(:),
     type_: Type,
-    default_value: Option<AttributeDefaultValue>,
+    default_value: Option<ValueAssignment>,
 }
 
 impl Parse for AttributeDeclaration {
@@ -92,30 +66,6 @@ impl Parse for AttributeDeclaration {
             },
             default_value: input.parse()?,
         })
-    }
-}
-
-struct AttributeValueAssignment {
-    ident: Ident,
-    _equal: Token!(=),
-    value: Expr,
-}
-
-impl Parse for AttributeValueAssignment {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        Ok(Self {
-            ident: input.parse()?,
-            _equal: input.parse()?,
-            value: input.parse()?,
-        })
-    }
-}
-
-impl ToTokens for AttributeValueAssignment {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        self.ident.to_tokens(tokens);
-        self._equal.to_tokens(tokens);
-        self.value.to_tokens(tokens);
     }
 }
 
@@ -260,7 +210,9 @@ impl<'f> Attribute<'f> {
             ident: declaration.ident,
             type_: type_state,
             values,
-            default: declaration.default_value.map(|default| default.value),
+            default: declaration
+                .default_value
+                .map(|default| default.value().to_owned()),
             config,
         }
     }
@@ -273,7 +225,7 @@ impl<'f> Attribute<'f> {
             .expect("tried to set a value for a variant that doesn't exists.");
 
         match attr_value.value {
-            None => attr_value.value = Some(value.value),
+            None => attr_value.value = Some(value.value().to_owned()),
             Some(ref value2) => {
                 emit_error!(
                     value2,
@@ -434,10 +386,10 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
         for attr in variant_attrs {
             let opt = attributes
                 .iter_mut()
-                .find(|attr2| attr2.ident == attr.ident);
+                .find(|attr2| &attr2.ident == attr.ident());
 
             if opt.is_none() {
-                emit_error!(attr.ident, "Unknown attribute.");
+                emit_error!(attr.ident(), "Unknown attribute.");
                 continue;
             }
 
