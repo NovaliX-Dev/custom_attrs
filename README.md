@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/crates/l/custom_attrs.svg)](./LICENSE)
 [![Documentation](https://docs.rs/custom_attrs/badge.svg)](https://docs.rs/custom_attrs)
 
-A library that allows you to configure values specific to each variants of an enum.
+A library that allows you to configure attributes with values specific to each variants of an enum.
 
 ## Installation and Usage
 
