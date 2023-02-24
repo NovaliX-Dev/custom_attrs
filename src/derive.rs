@@ -92,15 +92,15 @@ impl Parse for AttributeDeclaration {
 }
 
 struct AttributeValue<'f> {
-    variant_ident: &'f Ident,
+    variant: &'f Variant,
     value: Option<Expr>,
     type_state: TypeState,
 }
 
 impl<'f> AttributeValue<'f> {
-    pub fn new(field_ident: &'f Ident, type_state: TypeState) -> Self {
+    pub fn new(field_ident: &'f Variant, type_state: TypeState) -> Self {
         Self {
-            variant_ident: field_ident,
+            variant: field_ident,
             value: None,
             type_state,
         }
@@ -113,7 +113,25 @@ impl<'f> ToTokens for AttributeValue<'f> {
             return proc_macro2::TokenStream::new().to_tokens(tokens2);
         }
 
-        let ident = &self.variant_ident;
+        let ident = &self.variant.ident;
+        let fields = match self.variant.fields {
+            syn::Fields::Named(ref named) => {
+                let new_named = named.named.iter()
+                    .map(|n| n.ident.as_ref().unwrap());
+
+                quote!({#(#new_named),*})
+            },
+            syn::Fields::Unnamed(ref unnamed) => {
+                let new_named = unnamed.unnamed.iter()
+                    .enumerate()
+                    .map(|(i, _)| {
+                        Some(format_ident!("_{}", i))
+                    });
+
+                quote!((#(#new_named),*))
+            },
+            syn::Fields::Unit => quote!(),
+        };
 
         let value = self.value.as_ref().unwrap();
 
@@ -129,7 +147,7 @@ impl<'f> ToTokens for AttributeValue<'f> {
         };
 
         let tokens = quote! {
-            if let Self::#ident = self {
+            if let Self::#ident #fields = self {
                 return #value
             }
         };
@@ -163,7 +181,7 @@ impl<'f> Attribute<'f> {
 
         let values = variants
             .iter()
-            .map(|f| AttributeValue::new(&f.ident, type_state.to_owned()))
+            .map(|f| AttributeValue::new(&f, type_state.to_owned()))
             .collect();
 
         let config = Config::new(declaration.attributes);
@@ -184,7 +202,7 @@ impl<'f> Attribute<'f> {
         let attr_value = self
             .values
             .iter_mut()
-            .find(|p| p.variant_ident == ident)
+            .find(|p| &p.variant.ident == ident)
             .expect("tried to set a value for a variant that doesn't exists.");
 
         match attr_value.value {
@@ -209,7 +227,7 @@ impl<'f> Attribute<'f> {
         for value in &self.values {
             if value.value.is_none() {
                 emit_error!(
-                    value.variant_ident,
+                    value.variant,
                     format!("Value not set for `{}`.", self.ident)
                 );
             }
