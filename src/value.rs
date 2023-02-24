@@ -1,16 +1,16 @@
 use quote::ToTokens;
 use syn::{parse::Parse, token::CustomToken, Expr, Ident, Path, Token};
 
-pub type IdentValueAssignment = IdentValueAssignmentGeneric<Ident>;
-pub type PathOptionalValueAssignment = IdentOptionalValueAssignmentGeneric<Path>;
+pub type IdentValueAssignment = IdentValueAssignmentGeneric<Ident, Expr>;
+pub type PathOptionalValueAssignment = IdentOptionalValueAssignmentGeneric<Path, Expr>;
 
-pub struct IdentValueAssignmentGeneric<I> {
+pub struct IdentValueAssignmentGeneric<I, V> {
     ident: I,
-    value: ValueAssignment,
+    value: ValueAssignmentGeneric<V>,
 }
 
-impl<I> IdentValueAssignmentGeneric<I> {
-    pub fn value(&self) -> &Expr {
+impl<I, V> IdentValueAssignmentGeneric<I, V> {
+    pub fn value(&self) -> &V {
         &self.value.value
     }
 
@@ -19,7 +19,7 @@ impl<I> IdentValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: Parse> Parse for IdentValueAssignmentGeneric<I> {
+impl<I: Parse, V: Parse> Parse for IdentValueAssignmentGeneric<I, V> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
             ident: input.parse()?,
@@ -28,20 +28,20 @@ impl<I: Parse> Parse for IdentValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: ToTokens> ToTokens for IdentValueAssignmentGeneric<I> {
+impl<I: ToTokens, V: ToTokens> ToTokens for IdentValueAssignmentGeneric<I, V> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.ident.to_tokens(tokens);
         self.value.to_tokens(tokens);
     }
 }
 
-pub struct IdentOptionalValueAssignmentGeneric<I> {
+pub struct IdentOptionalValueAssignmentGeneric<I, V> {
     ident: I,
-    value: Option<ValueAssignment>,
+    value: Option<ValueAssignmentGeneric<V>>,
 }
 
-impl<I> IdentOptionalValueAssignmentGeneric<I> {
-    pub fn value(&self) -> Option<&Expr> {
+impl<I, V> IdentOptionalValueAssignmentGeneric<I, V> {
+    pub fn value(&self) -> Option<&V> {
         self.value.as_ref().map(|v| &v.value)
     }
 
@@ -50,7 +50,7 @@ impl<I> IdentOptionalValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: Parse> Parse for IdentOptionalValueAssignmentGeneric<I> {
+impl<I: Parse, V: Parse> Parse for IdentOptionalValueAssignmentGeneric<I, V> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
             ident: input.parse()?,
@@ -59,25 +59,27 @@ impl<I: Parse> Parse for IdentOptionalValueAssignmentGeneric<I> {
     }
 }
 
-impl<I: ToTokens> ToTokens for IdentOptionalValueAssignmentGeneric<I> {
+impl<I: ToTokens, V: ToTokens> ToTokens for IdentOptionalValueAssignmentGeneric<I, V> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.ident.to_tokens(tokens);
         self.value.to_tokens(tokens);
     }
 }
 
-pub struct ValueAssignment {
+pub type ValueAssignment = ValueAssignmentGeneric<Expr>;
+
+pub struct ValueAssignmentGeneric<V> {
     _equal: Token!(=),
-    value: Expr,
+    value: V,
 }
 
-impl ValueAssignment {
-    pub fn value(&self) -> &Expr {
+impl<V> ValueAssignmentGeneric<V> {
+    pub fn value(&self) -> &V {
         &self.value
     }
 }
 
-impl Parse for ValueAssignment {
+impl<V: Parse> Parse for ValueAssignmentGeneric<V> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         Ok(Self {
             _equal: input.parse()?,
@@ -86,7 +88,7 @@ impl Parse for ValueAssignment {
     }
 }
 
-impl CustomToken for ValueAssignment {
+impl<V> CustomToken for ValueAssignmentGeneric<V> {
     fn peek(cursor: syn::buffer::Cursor) -> bool {
         if let Some((punct, _)) = cursor.punct() {
             if punct.as_char() == '=' {
@@ -101,7 +103,7 @@ impl CustomToken for ValueAssignment {
     }
 }
 
-impl ToTokens for ValueAssignment {
+impl<V: ToTokens> ToTokens for ValueAssignmentGeneric<V> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self._equal.to_tokens(tokens);
         self.value.to_tokens(tokens);
