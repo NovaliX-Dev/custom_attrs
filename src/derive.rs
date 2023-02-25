@@ -8,7 +8,7 @@ use syn::{
     parse::Parse,
     punctuated::Punctuated,
     token::{self, Comma},
-    DataEnum, DeriveInput, Expr, Token, Type, Variant, Visibility, LitStr,
+    DataEnum, DeriveInput, Expr, LitStr, Token, Type, Variant, Visibility,
 };
 
 use crate::{
@@ -116,20 +116,19 @@ impl<'f> ToTokens for AttributeValue<'f> {
         let ident = &self.variant.ident;
         let fields = match self.variant.fields {
             syn::Fields::Named(ref named) => {
-                let new_named = named.named.iter()
-                    .map(|n| n.ident.as_ref().unwrap());
+                let new_named = named.named.iter().map(|n| n.ident.as_ref().unwrap());
 
                 quote!({#(#new_named: _),*})
-            },
+            }
             syn::Fields::Unnamed(ref unnamed) => {
-                let new_named = unnamed.unnamed.iter()
+                let new_named = unnamed
+                    .unnamed
+                    .iter()
                     .enumerate()
-                    .map(|(i, _)| {
-                        Some(format_ident!("_{}", i))
-                    });
+                    .map(|(i, _)| Some(format_ident!("_{}", i)));
 
                 quote!((#(#new_named),*))
-            },
+            }
             syn::Fields::Unit => quote!(),
         };
 
@@ -181,7 +180,7 @@ impl<'f> Attribute<'f> {
 
         let values = variants
             .iter()
-            .map(|f| AttributeValue::new(&f, type_state.to_owned()))
+            .map(|f| AttributeValue::new(f, type_state.to_owned()))
             .collect();
 
         let config = Config::new(declaration.attributes);
@@ -237,7 +236,10 @@ impl<'f> Attribute<'f> {
 
 impl<'f> ToTokens for Attribute<'f> {
     fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
-        let function_name = self.config.function_name().unwrap_or(format_ident!("get_{}", self.ident));
+        let function_name = self
+            .config
+            .function_name()
+            .unwrap_or(format_ident!("get_{}", self.ident));
 
         let vis = &self.vis;
         let type_ = match &self.type_ {
@@ -354,9 +356,12 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<IdentValueAssignment> {
 
 fn check_for_conflicts(attrs: &[Attribute]) {
     let mut before = HashMap::<&LitStr, &Attribute>::new();
-    for attr in attrs.iter().filter(|a| a.config.function_name_lit().is_some()) {
+    for attr in attrs
+        .iter()
+        .filter(|a| a.config.function_name_lit().is_some())
+    {
         let lit = attr.config.function_name_lit().unwrap();
-        
+
         if let Some((lit2, attr2)) = before.get_key_value(lit) {
             error_duplicate!(
                 lit, "The attribute `{}` already use this function name.", attr2.ident;

@@ -73,11 +73,11 @@
 //! )]
 //! enum Enum {}
 //! ```
-//! 
+//!
 //! ### Attribute properties
-//! 
+//!
 //! You can add properties to attributes to defines their characteristics. Even the documentation, in itself, is a property.
-//! 
+//!
 //! The syntax of a property is the following :
 //! ```rust, ignore
 //! #[attr(
@@ -85,15 +85,15 @@
 //!     <attribute>: <type>
 //! )]
 //! ```
-//! 
-//! Configs can also be flags: 
+//!
+//! Configs can also be flags:
 //! ```rust, ignore
 //! #[attr(
 //!     #[<config_name>]
 //!     <attribute>: <type>
 //! )]
 //! ```
-//! 
+//!
 //! Like attributes, you can define many properties in one bloc:
 //! ```rust, ignore
 //! #[attr(
@@ -101,7 +101,7 @@
 //!     <attribute>: <type>
 //! ])
 //! ```
-//! 
+//!
 //! Here is a list of all the properties :
 //! - `function` : defines the name of the function to get the attribute
 //!
@@ -188,7 +188,7 @@
 //!     )]
 //!     Variant3
 //! }
-//! 
+//!
 //! fn main() {
 //!     Enum::Variant1.a_getter(); // custom getter name
 //!     Enum::Variant2.get_b(); // default getter name
@@ -206,6 +206,8 @@
 //! # License
 //!
 //! Licensed under the MIT license.
+
+#![allow(clippy::needless_doctest_main)]
 
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
@@ -326,9 +328,9 @@ mod value;
 /// ```
 ///
 /// ### Attribute properties
-/// 
+///
 /// You can add properties to attributes to defines their characteristics. Even the documentation, in itself, is a property.
-/// 
+///
 /// The syntax of a property is the following :
 /// ```rust, ignore
 /// #[attr(
@@ -336,15 +338,15 @@ mod value;
 ///     <attribute>: <type>
 /// )]
 /// ```
-/// 
-/// Configs can also be flags: 
+///
+/// Configs can also be flags:
 /// ```rust, ignore
 /// #[attr(
 ///     #[<config_name>]
 ///     <attribute>: <type>
 /// )]
 /// ```
-/// 
+///
 /// Like attributes, you can define many properties in one bloc:
 /// ```rust, ignore
 /// #[attr(
@@ -352,10 +354,10 @@ mod value;
 ///     <attribute>: <type>
 /// ])
 /// ```
-/// 
+///
 /// Here is a list of all the properties :
 /// - `function` : defines the name of the function to get the attribute
-/// 
+///
 /// ### Getting a value attribute
 ///
 /// To get the value from a variant, simple call `get_<attribute name>` or the name
@@ -399,7 +401,7 @@ mod value;
 ///     )]
 ///     Variant3
 /// }
-/// 
+///
 /// fn main() {
 ///     Enum::Variant1.a_getter(); // custom getter name
 ///     Enum::Variant2.get_b(); // default getter name

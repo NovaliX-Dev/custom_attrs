@@ -71,9 +71,9 @@ impl Config {
 
                 let path = path.iter().map(|s| s.as_str()).collect::<Vec<_>>();
 
-                match path.as_slice() {
-                    &["doc"] => self_.parse_documentation(config),
-                    &["function"] => self_.parse_function(config, path),
+                match *path.as_slice() {
+                    ["doc"] => self_.parse_documentation(config),
+                    ["function"] => self_.parse_function(config, path),
 
                     _ => emit_error!(config.ident(), "Unknown config."),
                 }
@@ -123,7 +123,7 @@ impl Config {
                 }
 
                 self.function_name = Some(str.to_owned())
-            },
+            }
         }
     }
 
@@ -132,7 +132,9 @@ impl Config {
     }
 
     pub fn function_name(&self) -> Option<Ident> {
-        self.function_name.as_ref().map(|l| Ident::new(&l.value(), l.span()))
+        self.function_name
+            .as_ref()
+            .map(|l| Ident::new(&l.value(), l.span()))
     }
 
     pub fn function_name_lit(&self) -> Option<&LitStr> {
