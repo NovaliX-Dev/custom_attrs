@@ -227,7 +227,7 @@ impl<'f> Attribute<'f> {
         for value in &self.values {
             if value.value.is_none() {
                 emit_error!(
-                    value.variant,
+                    value.variant.ident,
                     format!("Value not set for `{}`.", self.ident)
                 );
             }
