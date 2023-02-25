@@ -119,7 +119,7 @@ impl<'f> ToTokens for AttributeValue<'f> {
                 let new_named = named.named.iter()
                     .map(|n| n.ident.as_ref().unwrap());
 
-                quote!({#(#new_named),*})
+                quote!({#(#new_named: _),*})
             },
             syn::Fields::Unnamed(ref unnamed) => {
                 let new_named = unnamed.unnamed.iter()

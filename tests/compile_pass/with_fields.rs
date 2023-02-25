@@ -1,4 +1,3 @@
-#![allow(unused)]
 use custom_attrs::CustomAttrs;
 
 #[derive(CustomAttrs)]
@@ -9,11 +8,15 @@ enum Enum {
 
     #[attr(a = 3)]
     Variant2 {
+        #[allow(unused)]
         field1: u32,
+
+        #[allow(unused)]
         field2: usize
     },
 }
 
 fn main() {
-    let a = Enum::Variant1(0, 1).get_a();
+    let _a = Enum::Variant1(0, 1).get_a();
+    let _b = Enum::Variant2 { field1: 2, field2: 4 }.get_a();
 }
