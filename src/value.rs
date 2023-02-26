@@ -1,8 +1,10 @@
 use quote::ToTokens;
 use syn::{parse::Parse, token::CustomToken, Expr, Ident, Path, Token};
 
-pub type IdentValueAssignment = IdentValueAssignmentGeneric<Ident, Expr>;
-pub type PathOptionalValueAssignment = IdentOptionalValueAssignmentGeneric<Path, Expr>;
+use crate::expr2::Expr2;
+
+pub type AttributeValueAssignment = IdentValueAssignmentGeneric<Ident, Expr2>;
+pub type ConfigValueAssignment = IdentOptionalValueAssignmentGeneric<Path, Expr>;
 
 pub struct IdentValueAssignmentGeneric<I, V> {
     ident: I,

@@ -8,7 +8,7 @@ use syn::{
     LitStr, Token,
 };
 
-use crate::{derive::error_duplicate, value::PathOptionalValueAssignment};
+use crate::{derive::error_duplicate, value::ConfigValueAssignment};
 
 macro_rules! unwrap_as {
     ($expr: expr, as $type: path, $error: expr) => {
@@ -25,7 +25,7 @@ macro_rules! unwrap_as {
 pub struct ConfigDeclarationList {
     _pound: Token!(#),
     _bracket: token::Bracket,
-    declarations: Punctuated<PathOptionalValueAssignment, Comma>,
+    declarations: Punctuated<ConfigValueAssignment, Comma>,
 }
 
 impl ConfigDeclarationList {
@@ -45,7 +45,7 @@ impl Parse for ConfigDeclarationList {
         Ok(Self {
             _pound: input.parse()?,
             _bracket: bracketed!(content in input),
-            declarations: content.parse_terminated(PathOptionalValueAssignment::parse)?,
+            declarations: content.parse_terminated(ConfigValueAssignment::parse)?,
         })
     }
 }
@@ -83,7 +83,7 @@ impl Config {
         self_
     }
 
-    fn parse_documentation(&mut self, attr: PathOptionalValueAssignment) {
+    fn parse_documentation(&mut self, attr: ConfigValueAssignment) {
         if attr.value().is_none() {
             emit_error!(attr.ident(), "Expected `doc = ...`");
             return;
@@ -99,7 +99,7 @@ impl Config {
         self.comment += str.value().as_str();
     }
 
-    fn parse_function(&mut self, attr: PathOptionalValueAssignment, path_str: Vec<&str>) {
+    fn parse_function(&mut self, attr: ConfigValueAssignment, path_str: Vec<&str>) {
         if attr.value().is_none() {
             emit_error!(attr.ident(), "Expected `function = ...`");
             return;

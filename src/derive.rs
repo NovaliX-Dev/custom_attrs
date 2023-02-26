@@ -14,7 +14,7 @@ use syn::{
 use crate::{
     config::{Config, ConfigDeclarationList},
     opt::{extract_type_from_option, is_option_wrapped},
-    value::{IdentValueAssignment, ValueAssignment},
+    value::{AttributeValueAssignment, ValueAssignment},
 };
 
 macro_rules! error_duplicate {
@@ -197,7 +197,7 @@ impl<'f> Attribute<'f> {
         }
     }
 
-    fn set(&mut self, ident: &Ident, value: IdentValueAssignment) {
+    fn set(&mut self, ident: &Ident, value: AttributeValueAssignment) {
         let attr_value = self
             .values
             .iter_mut()
@@ -205,7 +205,7 @@ impl<'f> Attribute<'f> {
             .expect("tried to set a value for a variant that doesn't exists.");
 
         match attr_value.value {
-            None => attr_value.value = Some(value.value().to_owned()),
+            None => attr_value.value = Some(value.value().expr().to_owned()),
             Some(ref value2) => {
                 error_duplicate!(
                     value, "The value is already set for this attribute.";
@@ -329,7 +329,7 @@ fn parse_enum_attributes<'f>(
         .collect()
 }
 
-fn parse_variant_attributes(variant: &Variant) -> Vec<IdentValueAssignment> {
+fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> {
     let mut variant_attrs = Vec::new();
 
     for attr in &variant.attrs {
@@ -343,7 +343,7 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<IdentValueAssignment> {
                     continue;
                 }
 
-                let list: ParenList<IdentValueAssignment> = res.unwrap();
+                let list: ParenList<AttributeValueAssignment> = res.unwrap();
 
                 variant_attrs.extend(list.elements.into_iter());
             }

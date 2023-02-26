@@ -215,6 +215,7 @@ use syn::DeriveInput;
 
 mod config;
 mod derive;
+mod expr2;
 mod opt;
 mod value;
 
