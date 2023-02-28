@@ -1,8 +1,8 @@
 error: unexpected end of input, expected expression
- --> tests/compile_fail/incomplete_value_syntax.rs:8:18
+ --> tests/compile_fail/incomplete_value_syntax.rs:8:19
   |
 8 |     #[attr(a = b =)]
-  |                  ^
+  |                   ^
 
 error: expected `=`
  --> tests/compile_fail/incomplete_value_syntax.rs:9:13

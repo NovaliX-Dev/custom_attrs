@@ -205,7 +205,7 @@ impl<'f> Attribute<'f> {
             .expect("tried to set a value for a variant that doesn't exists.");
 
         match attr_value.value {
-            None => attr_value.value = Some(value.value().expr().to_owned()),
+            None => attr_value.value = Some(value.value().to_owned()),
             Some(ref value2) => {
                 error_duplicate!(
                     value, "The value is already set for this attribute.";
