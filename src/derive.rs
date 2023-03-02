@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use proc_macro2::Ident;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
 use quote::{format_ident, quote, ToTokens};
 use syn::{
@@ -8,7 +7,7 @@ use syn::{
     parse::Parse,
     punctuated::Punctuated,
     token::{self, Comma},
-    DataEnum, DeriveInput, Expr, LitStr, Token, Type, Variant, Visibility,
+    DataEnum, DeriveInput, Expr, Ident, LitStr, Token, Type, Variant, Visibility,
 };
 
 use crate::{
