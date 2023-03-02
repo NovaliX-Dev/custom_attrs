@@ -46,6 +46,36 @@ macro_rules! unwrap_opt_or_continue {
     }};
 }
 
+macro_rules! unwrap_or_continue {
+    ($expr: expr) => {{
+        match $expr {
+            Ok(value) => value,
+            Err(e) => {
+                emit_error!(e.span(), e);
+                continue;
+            }
+        }
+    }};
+}
+
+macro_rules! unwrap_ {
+    ($expr: expr) => {{
+        match $expr {
+            Ok(value) => value,
+            Err(e) => return Err(e),
+        }
+    }};
+    ($expr: expr, $error: expr) => {{
+        match $expr {
+            Ok(value) => value,
+            Err(e) => {
+                let error = syn::Error::new(e.span(), $error);
+                return Err(error);
+            }
+        }
+    }};
+}
+
 struct ParenList<T> {
     _paren: token::Paren,
     elements: Punctuated<T, Comma>,
@@ -78,14 +108,7 @@ impl Parse for AttributeDeclaration {
             vis: input.parse()?,
             ident: input.parse()?,
             _colon: input.parse()?,
-            type_: {
-                let res = input.parse();
-                if let Err(e) = res {
-                    let err = syn::Error::new(e.span(), "Expected a type.");
-                    return Err(err);
-                }
-                res.unwrap()
-            },
+            type_: unwrap_!(input.parse(), "Expected a type."),
             default_value: input.parse()?,
         })
     }
@@ -293,13 +316,8 @@ fn parse_enum_attributes<'f>(
 
         match attr_ident.to_string().as_str() {
             "attr" => {
-                let res = syn::parse2(attr.tokens.to_owned());
-                if let Err(e) = res {
-                    emit_error!(e.span(), e);
-                    continue;
-                }
-
-                let declaration_list: ParenList<AttributeDeclaration> = res.unwrap();
+                let declaration_list: ParenList<AttributeDeclaration> =
+                    unwrap_or_continue!(syn::parse2(attr.tokens.to_owned()));
 
                 for declaration in declaration_list.elements {
                     let match_ = attribute_declarations
@@ -337,13 +355,8 @@ fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> 
 
         match attr_ident.to_string().as_str() {
             "attr" => {
-                let res = syn::parse2(attr.tokens.to_owned());
-                if let Err(e) = res {
-                    emit_error!(e.span(), e);
-                    continue;
-                }
-
-                let list: ParenList<AttributeValueAssignment> = res.unwrap();
+                let list: ParenList<AttributeValueAssignment> =
+                    unwrap_or_continue!(syn::parse2(attr.tokens.to_owned()));
 
                 variant_attrs.extend(list.elements.into_iter());
             }
