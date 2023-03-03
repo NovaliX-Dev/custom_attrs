@@ -10,8 +10,8 @@ pub struct IdentValueAssignmentGeneric<I, V> {
 }
 
 impl<I, V> IdentValueAssignmentGeneric<I, V> {
-    pub fn value(&self) -> &V {
-        &self.value.value
+    pub fn into_value(self) -> V {
+        self.value.value
     }
 
     pub fn ident(&self) -> &I {
@@ -74,8 +74,8 @@ pub struct ValueAssignmentGeneric<V> {
 }
 
 impl<V> ValueAssignmentGeneric<V> {
-    pub fn value(&self) -> &V {
-        &self.value
+    pub fn into_value(self) -> V {
+        self.value
     }
 }
 

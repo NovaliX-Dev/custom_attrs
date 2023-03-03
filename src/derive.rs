@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
+use proc_macro2::TokenStream;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
-use quote::{format_ident, quote, ToTokens};
+use quote::{format_ident, quote};
 use syn::{
     parenthesized,
     parse::Parse,
     punctuated::Punctuated,
     token::{self, Comma},
-    DataEnum, DeriveInput, Expr, Ident, LitStr, Token, Type, Variant, Visibility,
+    DeriveInput, Expr, Ident, LitStr, Token, Type, Variant, Visibility,
 };
 
 use crate::{
@@ -113,30 +114,24 @@ impl Parse for AttributeDeclaration {
     }
 }
 
-struct AttributeValue<'f> {
-    variant: &'f Variant,
-    value: Option<Expr>,
-    type_state: TypeState,
+struct AttributeValue {
+    variant: Ident,
+    value: Expr,
+    required: bool,
 }
 
-impl<'f> AttributeValue<'f> {
-    pub fn new(field_ident: &'f Variant, type_state: TypeState) -> Self {
+impl AttributeValue {
+    pub fn new(variant: Ident, required: bool, value: Expr) -> Self {
         Self {
-            variant: field_ident,
-            value: None,
-            type_state,
+            variant,
+            value,
+            required,
         }
     }
-}
 
-impl<'f> ToTokens for AttributeValue<'f> {
-    fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
-        if self.value.is_none() {
-            return proc_macro2::TokenStream::new().to_tokens(tokens2);
-        }
-
-        let ident = &self.variant.ident;
-        let fields = match self.variant.fields {
+    fn to_tokens(&self, variant: &Variant) -> TokenStream {
+        let ident = &variant.ident;
+        let fields = match variant.fields {
             syn::Fields::Named(ref named) => {
                 let new_named = named.named.iter().map(|n| n.ident.as_ref().unwrap());
 
@@ -154,134 +149,115 @@ impl<'f> ToTokens for AttributeValue<'f> {
             syn::Fields::Unit => quote!(),
         };
 
-        let value = self.value.as_ref().unwrap();
+        let value = &self.value;
 
-        let value = match self.type_state {
-            TypeState::Required(_) => quote!(#value),
-            TypeState::Optional(_) => {
-                if is_option_wrapped(value) {
-                    quote!(#value)
-                } else {
-                    quote!(Some(#value))
-                }
-            }
+        let value = if !self.required && !is_option_wrapped(value) {
+            quote!(Some(#value))
+        } else {
+            quote!(#value)
         };
 
-        let tokens = quote! {
+        quote! {
             if let Self::#ident #fields = self {
                 return #value
             }
-        };
-
-        tokens.to_tokens(tokens2)
+        }
     }
 }
 
-#[derive(Clone)]
-enum TypeState {
-    Required(Type),
-    Optional(Type),
-}
-
-struct Attribute<'f> {
+struct Attribute {
     vis: Visibility,
     ident: Ident,
-    type_: TypeState,
-    values: Vec<AttributeValue<'f>>,
+    required: bool,
+    type_: Type,
+    values: Vec<AttributeValue>,
     default: Option<Expr>,
     config: Config,
 }
 
-impl<'f> Attribute<'f> {
-    fn new(declaration: AttributeDeclaration, variants: &'f Punctuated<Variant, Comma>) -> Self {
+impl Attribute {
+    fn new(declaration: AttributeDeclaration) -> Self {
         let type_ = declaration.type_;
-        let type_state = match extract_type_from_option(&type_) {
-            Some(type_) => TypeState::Optional(type_.to_owned()),
-            None => TypeState::Required(type_),
-        };
-
-        let values = variants
-            .iter()
-            .map(|f| AttributeValue::new(f, type_state.to_owned()))
-            .collect();
+        let required = extract_type_from_option(&type_).is_none();
 
         let config = Config::new(declaration.attributes);
 
         Self {
             vis: declaration.vis,
             ident: declaration.ident,
-            type_: type_state,
-            values,
+            required,
+            type_,
+            values: Vec::new(),
             default: declaration
                 .default_value
-                .map(|default| default.value().to_owned()),
+                .map(|default| default.into_value()),
             config,
         }
     }
 
-    fn set(&mut self, ident: &Ident, value: AttributeValueAssignment) {
-        let attr_value = self
-            .values
-            .iter_mut()
-            .find(|p| &p.variant.ident == ident)
-            .expect("tried to set a value for a variant that doesn't exists.");
+    fn set(&mut self, variant: &Variant, value: AttributeValueAssignment) {
+        let match_ = self.values.iter().find(|v| v.variant == variant.ident);
 
-        match attr_value.value {
-            None => attr_value.value = Some(value.value().to_owned()),
-            Some(ref value2) => {
-                error_duplicate!(
-                    value, "The value is already set for this attribute.";
-                    value2, "First value of `{}` is set here.", self.ident
-                );
+        if let Some(value2) = match_ {
+            error_duplicate!(
+                value, "The value is already set for this attribute.";
+                value2.value, "First value of `{}` is set here.", self.ident
+            );
+
+            return;
+        }
+
+        self.values.push(AttributeValue::new(
+            variant.ident.to_owned(),
+            self.required,
+            value.into_value(),
+        ));
+    }
+
+    fn validate(&self, all_variants: &Punctuated<Variant, Comma>) {
+        for variant in all_variants {
+            let match_ = self.values.iter().find(|v| v.variant == variant.ident);
+
+            if match_.is_none() {
+                if self.default.is_some() {
+                    continue;
+                }
+
+                if self.required {
+                    emit_error!(
+                        variant.ident,
+                        format!("Value not set for `{}`.", self.ident)
+                    );
+                }
             }
         }
     }
 
-    fn check(&self) {
-        if self.default.is_some() {
-            return;
-        }
-        if let TypeState::Optional(_) = self.type_ {
-            return;
-        }
-
-        for value in &self.values {
-            if value.value.is_none() {
-                emit_error!(
-                    value.variant.ident,
-                    format!("Value not set for `{}`.", self.ident)
-                );
-            }
-        }
-    }
-}
-
-impl<'f> ToTokens for Attribute<'f> {
-    fn to_tokens(&self, tokens2: &mut proc_macro2::TokenStream) {
+    fn to_tokens(&self, all_variants: &Punctuated<Variant, Comma>) -> TokenStream {
         let function_name = self
             .config
             .function_name()
             .unwrap_or(format_ident!("get_{}", self.ident));
 
         let vis = &self.vis;
-        let type_ = match &self.type_ {
-            TypeState::Required(type_) => quote!(#type_),
-            TypeState::Optional(type_) => quote!(Option<#type_>),
-        };
-        let values = &self.values;
+        let type_ = &self.type_;
+        let values = self.values.iter().map(|v| {
+            all_variants
+                .iter()
+                .find(|var| var.ident == v.variant)
+                .map(|var| v.to_tokens(var))
+        });
 
         let default = match &self.default {
             Some(value) => {
-                let mut tokens = quote!(#value);
-                if let TypeState::Optional(_) = self.type_ {
-                    if !is_option_wrapped(value) {
-                        tokens = quote!(Some(#value))
-                    }
+                if !is_option_wrapped(value) && !self.required {
+                    quote!(Some(#value))
+                } else {
+                    quote!(#value)
                 }
-                tokens
             }
             None => {
-                if let TypeState::Optional(_) = self.type_ {
+                if !self.required {
                     quote!(None)
                 } else {
                     quote!(unreachable!())
@@ -291,23 +267,18 @@ impl<'f> ToTokens for Attribute<'f> {
 
         let comment = self.config.comment();
 
-        let tokens = quote! {
+        quote! {
             #[doc = #comment]
             #vis fn #function_name(&self) -> #type_ {
                 #(#values)*
 
                 #default
             }
-        };
-
-        tokens.to_tokens(tokens2)
+        }
     }
 }
 
-fn parse_enum_attributes<'f>(
-    attrs: &[syn::Attribute],
-    data_enum: &'f DataEnum,
-) -> Vec<Attribute<'f>> {
+fn parse_enum_attributes(attrs: &[syn::Attribute]) -> Vec<Attribute> {
     let mut attribute_declarations = Vec::<AttributeDeclaration>::new();
 
     for attr in attrs.iter() {
@@ -342,7 +313,7 @@ fn parse_enum_attributes<'f>(
 
     attribute_declarations
         .into_iter()
-        .map(|decl| Attribute::new(decl, &data_enum.variants))
+        .map(Attribute::new)
         .collect()
 }
 
@@ -392,10 +363,10 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
         syn::Data::Struct(struct_) => abort!(struct_.struct_token, "Not implemented for structs."),
         syn::Data::Union(union_) => abort!(union_.union_token, "Not implemented for unions."),
 
-        syn::Data::Enum(ref data_enum) => data_enum,
+        syn::Data::Enum(data_enum) => data_enum,
     };
 
-    let mut attributes = parse_enum_attributes(&input.attrs, data_enum);
+    let mut attributes = parse_enum_attributes(&input.attrs);
 
     abort_if_dirty();
 
@@ -412,12 +383,12 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
                 continue;
             }
 
-            opt.unwrap().set(&variant.ident, attr)
+            opt.unwrap().set(variant, attr)
         }
     }
 
     for attr in attributes.iter() {
-        attr.check();
+        attr.validate(&data_enum.variants);
     }
 
     abort_if_dirty();
@@ -429,9 +400,11 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
     let ident = &input.ident;
     let (impl_generics, generics, generic_where) = input.generics.split_for_impl();
 
+    let tokens = attributes.iter().map(|a| a.to_tokens(&data_enum.variants));
+
     quote! {
         impl #impl_generics #ident #generics #generic_where {
-            #(#attributes)*
+            #(#tokens)*
         }
     }
 }
