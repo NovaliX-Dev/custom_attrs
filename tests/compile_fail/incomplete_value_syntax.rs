@@ -13,6 +13,10 @@ enum Enum {
     #[attr(a = 3)]
     #[attr(b = 3)]
     Variant2,
+    
+    #[attr(a = )]
+    #[attr(b = 3)]
+    Variant3,
 }
 
 fn main() {

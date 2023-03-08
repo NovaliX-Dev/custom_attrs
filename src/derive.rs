@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
 use proc_macro_error::{abort, abort_if_dirty, emit_error};
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, ToTokens};
 use syn::{
     parenthesized,
     parse::Parse,
@@ -14,7 +14,10 @@ use syn::{
 use crate::{
     config::{Config, ConfigDeclarationList},
     opt::{extract_type_from_option, is_option_wrapped},
-    value::{AttributeValueAssignment, ValueAssignment},
+    value::{
+        AttributeValueAssignment, AttributeValueAssignmentTokenStream,
+        AttributeValueAssignmentTokens, ValueAssignment,
+    },
 };
 
 macro_rules! error_duplicate {
@@ -81,6 +84,19 @@ struct ParenList<T> {
     elements: Punctuated<T, Comma>,
 }
 
+impl<T> ParenList<T> {
+    fn into_parts(self) -> (token::Paren, Punctuated<T, Comma>) {
+        (self._paren, self.elements)
+    }
+
+    fn from_parts(paren: token::Paren, elements: Vec<T>) -> Self {
+        Self {
+            _paren: paren,
+            elements: Punctuated::from_iter(elements.into_iter()),
+        }
+    }
+}
+
 impl<T: Parse> Parse for ParenList<T> {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let content;
@@ -89,6 +105,13 @@ impl<T: Parse> Parse for ParenList<T> {
             _paren: parenthesized!(content in input),
             elements: content.parse_terminated(T::parse)?,
         })
+    }
+}
+
+impl<T: ToTokens> ToTokens for ParenList<T> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        self._paren
+            .surround(tokens, |tokens2| self.elements.to_tokens(tokens2));
     }
 }
 
@@ -317,26 +340,6 @@ fn parse_enum_attributes(attrs: &[syn::Attribute]) -> Vec<Attribute> {
         .collect()
 }
 
-fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> {
-    let mut variant_attrs = Vec::new();
-
-    for attr in &variant.attrs {
-        let attr_ident = unwrap_opt_or_continue!(attr.path.get_ident());
-
-        match attr_ident.to_string().as_str() {
-            "attr" => {
-                let list: ParenList<AttributeValueAssignment> =
-                    unwrap_or_continue!(syn::parse2(attr.tokens.to_owned()));
-
-                variant_attrs.extend(list.elements.into_iter());
-            }
-            _ => continue,
-        }
-    }
-
-    variant_attrs
-}
-
 fn check_for_conflicts(attrs: &[Attribute]) {
     let mut before = HashMap::<&LitStr, &Attribute>::new();
     for attr in attrs
@@ -358,8 +361,62 @@ fn check_for_conflicts(attrs: &[Attribute]) {
     }
 }
 
+fn parse_variant_attributes(variant: &Variant) -> Vec<AttributeValueAssignment> {
+    let mut variant_attrs = Vec::new();
+
+    for attr in &variant.attrs {
+        let attr_ident = unwrap_opt_or_continue!(attr.path.get_ident());
+
+        match attr_ident.to_string().as_str() {
+            "attr" => {
+                let list: ParenList<AttributeValueAssignment> =
+                    unwrap_or_continue!(syn::parse2(attr.tokens.to_owned()));
+
+                variant_attrs.extend(list.elements.into_iter());
+            }
+            _ => continue,
+        }
+    }
+
+    variant_attrs
+}
+
+fn expand_variant_attributes(variant: &mut Variant) {
+    for attr in variant.attrs.iter_mut() {
+        let attr_ident = unwrap_opt_or_continue!(attr.path.get_ident());
+
+        match attr_ident.to_string().as_str() {
+            "attr" => {
+                let list: ParenList<AttributeValueAssignmentTokens> =
+                    unwrap_or_continue!(syn::parse2(attr.tokens.to_owned()));
+
+                let (list_span, elements) = list.into_parts();
+
+                let mut new_elements = Vec::new();
+                for element in elements {
+                    let (ident, equal, value) = element.into_parts();
+
+                    new_elements.push(AttributeValueAssignmentTokenStream::from_parts(
+                        ident,
+                        equal,
+                        value.into_token_stream(),
+                    ))
+                }
+
+                let new_list = ParenList::<AttributeValueAssignmentTokenStream>::from_parts(
+                    list_span,
+                    new_elements,
+                );
+
+                attr.tokens = new_list.to_token_stream();
+            }
+            _ => continue,
+        }
+    }
+}
+
 pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
-    let data_enum = match input.data {
+    let mut data_enum = match input.data {
         syn::Data::Struct(struct_) => abort!(struct_.struct_token, "Not implemented for structs."),
         syn::Data::Union(union_) => abort!(union_.union_token, "Not implemented for unions."),
 
@@ -370,7 +427,8 @@ pub fn derive_custom_attrs(input: DeriveInput) -> proc_macro2::TokenStream {
 
     abort_if_dirty();
 
-    for variant in &data_enum.variants {
+    for variant in data_enum.variants.iter_mut() {
+        expand_variant_attributes(variant);
         let variant_attrs = parse_variant_attributes(variant);
 
         for attr in variant_attrs {

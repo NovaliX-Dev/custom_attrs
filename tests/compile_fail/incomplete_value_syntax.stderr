@@ -1,19 +1,31 @@
-error: unexpected end of input, expected expression
- --> tests/compile_fail/incomplete_value_syntax.rs:8:19
-  |
-8 |     #[attr(a = b =)]
-  |                   ^
-
 error: expected `=`
  --> tests/compile_fail/incomplete_value_syntax.rs:9:13
   |
 9 |     #[attr(b)]
   |             ^
 
+error: expected expression
+ --> tests/compile_fail/incomplete_value_syntax.rs:8:19
+  |
+8 |     #[attr(a = b =)]
+  |                   ^
+
+error: expected expression
+  --> tests/compile_fail/incomplete_value_syntax.rs:17:16
+   |
+17 |     #[attr(a = )]
+   |                ^
+
 error: Value not set for `a`.
   --> tests/compile_fail/incomplete_value_syntax.rs:10:5
    |
 10 |     Variant1,
+   |     ^^^^^^^^
+
+error: Value not set for `a`.
+  --> tests/compile_fail/incomplete_value_syntax.rs:19:5
+   |
+19 |     Variant3,
    |     ^^^^^^^^
 
 error: Value not set for `b`.

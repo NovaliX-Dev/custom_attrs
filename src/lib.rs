@@ -216,6 +216,7 @@ use syn::DeriveInput;
 mod config;
 mod derive;
 mod opt;
+mod reference;
 mod value;
 
 /// The main trait of the library.

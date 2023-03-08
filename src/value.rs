@@ -1,7 +1,12 @@
+use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{parse::Parse, token::CustomToken, Expr, Ident, Path, Token};
 
+use crate::reference::ReferenceTokens;
+
 pub type AttributeValueAssignment = IdentValueAssignmentGeneric<Ident, Expr>;
+pub type AttributeValueAssignmentTokens = IdentValueAssignmentGeneric<Ident, ReferenceTokens>;
+pub type AttributeValueAssignmentTokenStream = IdentValueAssignmentGeneric<Ident, TokenStream>;
 pub type ConfigValueAssignment = IdentOptionalValueAssignmentGeneric<Path, Expr>;
 
 pub struct IdentValueAssignmentGeneric<I, V> {
@@ -12,6 +17,17 @@ pub struct IdentValueAssignmentGeneric<I, V> {
 impl<I, V> IdentValueAssignmentGeneric<I, V> {
     pub fn into_value(self) -> V {
         self.value.value
+    }
+
+    pub fn from_parts(ident: I, equal: Token!(=), value: V) -> Self {
+        Self {
+            ident,
+            value: ValueAssignmentGeneric::from_parts(equal, value),
+        }
+    }
+
+    pub fn into_parts(self) -> (I, Token!(=), V) {
+        (self.ident, self.value._equal, self.value.value)
     }
 
     pub fn ident(&self) -> &I {
@@ -74,6 +90,13 @@ pub struct ValueAssignmentGeneric<V> {
 }
 
 impl<V> ValueAssignmentGeneric<V> {
+    pub fn from_parts(equal: Token!(=), value: V) -> Self {
+        Self {
+            _equal: equal,
+            value,
+        }
+    }
+
     pub fn into_value(self) -> V {
         self.value
     }
