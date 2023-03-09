@@ -1,0 +1,35 @@
+error: Expecting reference ident or `[`.
+ --> tests/compile_fail/self_references/invalid_syntax.rs:6:17
+  |
+6 |     #[attr(a = #)]
+  |                 ^
+
+error: Expecting `.`.
+ --> tests/compile_fail/self_references/invalid_syntax.rs:9:21
+  |
+9 |     #[attr(a = #self)]
+  |                     ^
+
+error: Expecting ident.
+  --> tests/compile_fail/self_references/invalid_syntax.rs:12:22
+   |
+12 |     #[attr(a = #self.)]
+   |                      ^
+
+error: Value not set for `a`.
+ --> tests/compile_fail/self_references/invalid_syntax.rs:7:5
+  |
+7 |     Variant1(usize, u32),
+  |     ^^^^^^^^
+
+error: Value not set for `a`.
+  --> tests/compile_fail/self_references/invalid_syntax.rs:10:5
+   |
+10 |     Variant3(usize, u32),
+   |     ^^^^^^^^
+
+error: Value not set for `a`.
+  --> tests/compile_fail/self_references/invalid_syntax.rs:13:5
+   |
+13 |     Variant4(usize, u32),
+   |     ^^^^^^^^

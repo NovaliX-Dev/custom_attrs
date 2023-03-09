@@ -21,3 +21,27 @@ error: First value of `a` is set here.
    |
 11 |         a = 3,
    |             ^
+
+error: The value is already set for this attribute.
+  --> tests/compile_fail/variant_value_already_set.rs:21:12
+   |
+21 |     #[attr(a = #self.0)]
+   |            ^^^^^^^^^^^
+
+error: First value of `a` is set here.
+  --> tests/compile_fail/variant_value_already_set.rs:20:16
+   |
+20 |     #[attr(a = #self.0)]
+   |                ^^^^^^^^
+
+error: The value is already set for this attribute.
+  --> tests/compile_fail/variant_value_already_set.rs:26:9
+   |
+26 |         a = #self.field1
+   |         ^^^^^^^^^^^^^^^^
+
+error: First value of `a` is set here.
+  --> tests/compile_fail/variant_value_already_set.rs:25:13
+   |
+25 |         a = #self.field1,
+   |             ^^^^^^^^^^^^

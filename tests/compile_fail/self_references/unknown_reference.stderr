@@ -1,0 +1,11 @@
+error[E0425]: cannot find value `_5` in this scope
+ --> tests/compile_fail/self_references/unknown_reference.rs:6:22
+  |
+6 |     #[attr(a = #self.5)]
+  |                      ^ help: a local variable with a similar name exists: `_0`
+
+error[E0425]: cannot find value `unknown` in this scope
+ --> tests/compile_fail/self_references/unknown_reference.rs:9:22
+  |
+9 |     #[attr(a = #self.unknown)]
+  |                      ^^^^^^^ not found in this scope
