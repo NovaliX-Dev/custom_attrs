@@ -49,7 +49,7 @@
 //! You can set the visibility of the attribute. This will change the visibility of the getter function.
 //!
 //! ```rust, ignore
-//! #[attr(pub name: u32)]
+//! #[attr(pub attribute: u32)]
 //! enum Enum {}
 //! ```
 //!
@@ -59,8 +59,12 @@
 //! You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 //!
 //! ```rust, ignore
-//! #[attr(optional: Option<u32>)]
-//! #[attr(with_default: u32 = 3)]
+//! #[attr(attribute: Option<u32>)]
+//! enum Enum {}
+//! ```
+//!
+//! ```rust, ignore
+//! #[attr(attribute: u32 = 3)]
 //! enum Enum {}
 //! ```
 //!
@@ -72,6 +76,90 @@
 //!     attribute: u32
 //! )]
 //! enum Enum {}
+//! ```
+//!
+//! ### Setting a value
+//!
+//! To set a value for a variant, just add the name of the attribute followed by the value you want to set.
+//!
+//!
+//! ```rust, ignore
+//! enum Enum {
+//!     #[attr(attribute = 4)]
+//!     VariantA
+//! }
+//! ```
+//!
+//! Like declarations, you can set many values at once.
+//!
+//! ```rust, ignore
+//! #[attr(
+//!     attr1: usize,
+//!     attr2: usize
+//! )]
+//! enum Enum {
+//!     #[attr(
+//!         attr1 = 4,
+//!         attr2 = 1
+//!     )]
+//!     VariantA
+//! }
+//! ```
+//!
+//! If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
+//!
+//! ```rust, ignore
+//! #[attr(optional: Option<usize>)]
+//! enum Enum {
+//!     #[attr(optional = 4)]
+//!     VariantA,
+//!
+//!     #[attr(optional = None)]
+//!     VariantB,
+//!
+//!     // you can still wrap the value into an option
+//!     #[attr(optional = Some(5))]
+//!     VariantC,
+//! }
+//! ```
+//!
+//! #### Self References
+//!
+//! In attribute values you set, you can add a reference to a field of the variant.
+//!
+//! The syntax is the following :
+//!
+//! ```rust, ignore
+//! #[attr(name: usize)]
+//! enum Enum {
+//!     /// Use the name of the field if it's named
+//!     #[attr(name = #self.field)]
+//!     Variant {
+//!         field: usize
+//!     },
+//!
+//!     /// Otherwise use it's position
+//!     #[attr(name = #self.0)]
+//!     Variant2(usize)
+//! }
+//! ```
+//!
+//! Self references are processed before the value is parsed as expression, so you can use them anywhere you need :
+//!
+//! ```rust, ignore
+//! enum Enum {
+//!     #[attr(a = #self.list[*#self.index])]
+//!     Variant3 {
+//!         list: [usize; 4],
+//!         index: usize,
+//!     },
+//! }
+//! ```
+//!
+//! Please note that the value returned a **reference** ! To deref it, just add a `*` before the syntax, like so :
+//!
+//! ```rust, ignore
+//! #[attr(name = *#self.<field>)]
 //! ```
 //!
 //! ### Attribute properties
@@ -105,50 +193,10 @@
 //! Here is a list of all the properties :
 //! - `function` : defines the name of the function to get the attribute
 //!
-//! ### Setting a value
-//!
-//! To set a value for a variant, just add the name of the attribute followed by the value you want to set.
-//!
-//!
-//! ```rust, ignore
-//! enum Enum {
-//!     #[attr(name = 4)]
-//!     VariantA
-//! }
-//! ```
-//!
-//! Like declarations, you can set many values at once.
-
-//! ```rust, ignore
-//! enum Enum {
-//!     #[attr(
-//!         name = 4,
-//!         name2 = 1
-//!     )]
-//!     VariantA
-//! }
-//! ```
-//!
-//! If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
-//!
-//! ```rust, ignore
-//! enum Enum {
-//!     #[attr(name = 4)]
-//!     VariantA,
-//!
-//!     #[attr(name = None)]
-//!     VariantB,
-//!
-//!     // you can still wrap the value into an option
-//!     #[attr(name = Some(5))]
-//!     VariantC,
-//! }
-//! ```
-//!
-//! ### Getting the value of an attribute
+//! ### Getting a value attribute
 //!
 //! To get the value from a variant, simple call `get_<attribute name>` or the name
-//! you've set in the properties of the attributes.
+//! /// you've set in the properties of the attributes.
 //!
 //! ```rust, ignore
 //! Element::VariantA.get_a();
@@ -165,13 +213,12 @@
 //!
 //! #[derive(CustomAttrs)]
 //!
-//! // set the attributes
 //! #[attr(
 //!     #[function = "a_getter"]
 //!     pub a: usize
 //! )]
-//! #[attr(b: Option<usize>)] // attributes can be optional
-//! #[attr(c: &'static str = "Hello world!")] // and can also have ult values
+//! #[attr(b: Option<usize>)]
+//! #[attr(c: &'static str = "Hello world!")]
 //! enum Enum {
 //!     #[attr(a = 5)]
 //!     #[attr(b = 3)]
@@ -186,14 +233,19 @@
 //!         b = 5,
 //!         c = "Hello for the last time !"
 //!     )]
-//!     Variant3
+//!     Variant3,
+//!
+//!     /// You can access fields of the variant
+//!     #[attr(a = *#self.field)]
+//!     Variant4 {
+//!         field: usize
+//!     }
 //! }
 //!
 //! fn main() {
 //!     Enum::Variant1.a_getter(); // custom getter name
 //!     Enum::Variant2.get_b(); // default getter name
 //! }
-//!
 //! ```
 //!
 //! See the examples directory for more details.
@@ -263,7 +315,7 @@ mod value;
 /// You can set the visibility of the attribute. This will change the visibility of the getter function.
 ///
 /// ```rust, ignore
-/// #[attr(pub name: u32)]
+/// #[attr(pub attribute: u32)]
 /// enum Enum {}
 /// ```
 ///
@@ -273,8 +325,12 @@ mod value;
 /// You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 ///
 /// ```rust, ignore
-/// #[attr(optional: Option<u32>)]
-/// #[attr(with_default: u32 = 3)]
+/// #[attr(attribute: Option<u32>)]
+/// enum Enum {}
+/// ```
+///
+/// ```rust, ignore
+/// #[attr(attribute: u32 = 3)]
 /// enum Enum {}
 /// ```
 ///
@@ -295,18 +351,22 @@ mod value;
 ///
 /// ```rust, ignore
 /// enum Enum {
-///     #[attr(name = 4)]
+///     #[attr(attribute = 4)]
 ///     VariantA
 /// }
 /// ```
 ///
 /// Like declarations, you can set many values at once.
-
+///
 /// ```rust, ignore
+/// #[attr(
+///     attr1: usize,
+///     attr2: usize
+/// )]
 /// enum Enum {
 ///     #[attr(
-///         name = 4,
-///         name2 = 1
+///         attr1 = 4,
+///         attr2 = 1
 ///     )]
 ///     VariantA
 /// }
@@ -315,17 +375,57 @@ mod value;
 /// If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
 ///
 /// ```rust, ignore
+/// #[attr(optional: Option<usize>)]
 /// enum Enum {
-///     #[attr(name = 4)]
+///     #[attr(optional = 4)]
 ///     VariantA,
 ///
-///     #[attr(name = None)]
+///     #[attr(optional = None)]
 ///     VariantB,
 ///
 ///     // you can still wrap the value into an option
-///     #[attr(name = Some(5))]
+///     #[attr(optional = Some(5))]
 ///     VariantC,
 /// }
+/// ```
+///
+/// #### Self References
+///
+/// In attribute values you set, you can add a reference to a field of the variant.
+///
+/// The syntax is the following :
+///
+/// ```rust, ignore
+/// #[attr(name: usize)]
+/// enum Enum {
+///     /// Use the name of the field if it's named
+///     #[attr(name = #self.field)]
+///     Variant {
+///         field: usize
+///     },
+///
+///     /// Otherwise use it's position
+///     #[attr(name = #self.0)]
+///     Variant2(usize)
+/// }
+/// ```
+///
+/// Self references are processed before the value is parsed as expression, so you can use them anywhere you need :
+///
+/// ```rust, ignore
+/// enum Enum {
+///     #[attr(a = #self.list[*#self.index])]
+///     Variant3 {
+///         list: [usize; 4],
+///         index: usize,
+///     },
+/// }
+/// ```
+///
+/// Please note that the value returned a **reference** ! To deref it, just add a `*` before the syntax, like so :
+///
+/// ```rust, ignore
+/// #[attr(name = *#self.<field>)]
 /// ```
 ///
 /// ### Attribute properties
@@ -362,7 +462,7 @@ mod value;
 /// ### Getting a value attribute
 ///
 /// To get the value from a variant, simple call `get_<attribute name>` or the name
-/// you've set in the properties of the attributes.
+/// /// you've set in the properties of the attributes.
 ///
 /// ```rust, ignore
 /// Element::VariantA.get_a();
@@ -379,13 +479,12 @@ mod value;
 ///
 /// #[derive(CustomAttrs)]
 ///
-/// // set the attributes
 /// #[attr(
 ///     #[function = "a_getter"]
 ///     pub a: usize
 /// )]
-/// #[attr(b: Option<usize>)] // attributes can be optional
-/// #[attr(c: &'static str = "Hello world!")] // and can also have ult values
+/// #[attr(b: Option<usize>)]
+/// #[attr(c: &'static str = "Hello world!")]
 /// enum Enum {
 ///     #[attr(a = 5)]
 ///     #[attr(b = 3)]
@@ -400,7 +499,13 @@ mod value;
 ///         b = 5,
 ///         c = "Hello for the last time !"
 ///     )]
-///     Variant3
+///     Variant3,
+///
+///     /// You can access fields of the variant
+///     #[attr(a = *#self.field)]
+///     Variant4 {
+///         field: usize
+///     }
 /// }
 ///
 /// fn main() {

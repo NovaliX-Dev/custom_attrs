@@ -11,9 +11,12 @@ enum Enum {
         #[allow(unused)]
         field1: u32,
 
-        #[allow(unused)]
         field2: usize,
     },
+
+    #[allow(unused)]
+    #[attr(a = #self.list[*#self.index])]
+    Variant3 { list: [usize; 4], index: usize },
 }
 
 fn main() {

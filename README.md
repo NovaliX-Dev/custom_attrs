@@ -56,7 +56,7 @@ Optionally, you can add more components.
 You can set the visibility of the attribute. This will change the visibility of the getter function.
 
 ```rust
-#[attr(pub name: u32)]
+#[attr(pub attribute: u32)]
 enum Enum {}
 ```
 
@@ -66,12 +66,12 @@ If this requirement is not set, the library will produce an error.
 You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 
 ```rust
-#[attr(name: Option<u32>)]
+#[attr(attribute: Option<u32>)]
 enum Enum {}
 ```
 
 ```rust
-#[attr(name: u32 = 3)]
+#[attr(attribute: u32 = 3)]
 enum Enum {}
 ```
 
@@ -92,7 +92,7 @@ To set a value for a variant, just add the name of the attribute followed by the
 
 ```rust
 enum Enum {
-    #[attr(name = 4)]
+    #[attr(attribute = 4)]
     VariantA
 }
 ```
@@ -100,10 +100,14 @@ enum Enum {
 Like declarations, you can set many values at once.
 
 ```rust
+#[attr(
+    attr1: usize,
+    attr2: usize
+)]
 enum Enum {
     #[attr(
-        name = 4,
-        name2 = 1
+        attr1 = 4,
+        attr2 = 1
     )]
     VariantA
 }
@@ -112,17 +116,57 @@ enum Enum {
 If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you. If you want the value to be `None`, just put `None` behind the it.
 
 ```rust
+#[attr(optional: Option<usize>)]
 enum Enum {
-    #[attr(name = 4)]
+    #[attr(optional = 4)]
     VariantA,
 
-    #[attr(name = None)]
+    #[attr(optional = None)]
     VariantB,
 
     // you can still wrap the value into an option
-    #[attr(name = Some(5))]
+    #[attr(optional = Some(5))]
     VariantC,
 }
+```
+
+#### Self References
+
+In attribute values you set, you can add a reference to a field of the variant.
+
+The syntax is the following :
+
+```rust
+#[attr(name: usize)]
+enum Enum {
+    /// Use the name of the field if it's named
+    #[attr(name = #self.field)]
+    Variant {
+        field: usize
+    },
+
+    /// Otherwise use it's position
+    #[attr(name = #self.0)]
+    Variant2(usize)
+}
+```
+
+Self references are processed before the value is parsed as expression, so you can use them anywhere you need :
+
+```rust
+enum Enum {
+    #[attr(a = #self.list[*#self.index])]
+    Variant3 {
+        list: [usize; 4],
+        index: usize,
+    },
+}
+```
+
+Please note that the value returned a **reference** ! To deref it, just add a `*` before the syntax, like so :
+
+```rust
+#[attr(name = *#self.<field>)]
 ```
 
 ### Attribute properties
@@ -196,7 +240,13 @@ enum Enum {
         b = 5,
         c = "Hello for the last time !"
     )]
-    Variant3
+    Variant3,
+
+    /// You can access fields of the variant
+    #[attr(a = *#self.field)]
+    Variant4 {
+        field: usize
+    }
 }
 
 fn main() {
