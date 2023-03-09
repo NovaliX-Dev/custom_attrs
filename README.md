@@ -13,7 +13,7 @@ A library that allows you to configure attributes with values specific to each v
 Add this to your `Cargo.toml` file :
 ```toml
 [dependencies]
-custom_attrs = "1.5"
+custom_attrs = "1.6"
 ```
 
 Then you can use the `derive` attribute to use the library.

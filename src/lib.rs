@@ -7,7 +7,7 @@
 //! Add this to your `Cargo.toml` file :
 //! ```toml
 //! [dependencies]
-//! custom_attrs = "1.5"
+//! custom_attrs = "1.6"
 //! ```
 //!
 //! Then you can use the `derive` attribute to use the library.
