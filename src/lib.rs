@@ -39,13 +39,13 @@
 //! 
 //! By default, an attribute declaration is composed of two parts : an attribute's name and it's type.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(name: u32)]
 //! ```
 //! 
 //! You can declare many attribute declarations in a single `attr`.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(
 //!     name: u32,
 //!     name2: usize
@@ -58,7 +58,7 @@
 //! 
 //! You can set the visibility before the attribute name. This will change the visibility of the getter function.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(pub attribute: u32)]
 //! ```
 //! 
@@ -68,19 +68,19 @@
 //! You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 //! 
 //! Optional attribute syntax :
-//! ```rust
+//! ```rust, ignore
 //! #[attr(attribute: Option<u32>)]
 //! enum Enum {}
 //! ```
 //! 
 //! With default value syntax :
-//! ```rust
+//! ```rust, ignore
 //! #[attr(attribute: u32 = 3)]
 //! ```
 //! 
 //! You can add documentation to attributes declaration. It will be added to the getter function.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(
 //!     /// Attribute documentation
 //!     attribute: u32
@@ -91,7 +91,7 @@
 //! 
 //! To set a value for a variant, just add the name of the attribute followed by the value you want to set.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! enum Enum {
 //!     #[attr(attribute = 4)]
 //!     VariantA
@@ -100,7 +100,7 @@
 //! 
 //! Like declarations, you can set many values at once.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! enum Enum {
 //!     #[attr(
 //!         attr1 = 4,
@@ -112,7 +112,7 @@
 //! 
 //! If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you _(value wrapped in a Some are still supported)_. If you want the value to be `None`, just put `None` behind the it.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(optional: Option<usize>)]
 //! enum Enum {
 //!     #[attr(optional = 4)]
@@ -132,7 +132,7 @@
 //! 
 //! The syntax is the following :
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(name: usize)]
 //! enum Enum {
 //!     // Use the name of the field if it's named
@@ -149,7 +149,7 @@
 //! 
 //! Self references are processed before the value is parsed as expression, so you can use them anywhere you need :
 //! 
-//! ```rust
+//! ```rust, ignore
 //! enum Enum {
 //!     #[attr(a = #self.list[*#self.index])]
 //!     Variant3 {
@@ -161,7 +161,7 @@
 //! 
 //! If you're using self reference, the value returned will also be a reference. You can deref it like so :
 //! 
-//! ```rust
+//! ```rust, ignore
 //! #[attr(name = *#self.<field>)]
 //! ```
 //! 
@@ -170,7 +170,7 @@
 //! You can configure you attributes to change their characteristics.
 //! 
 //! The syntax of a property is the following :
-//! ```rust, ignore
+//! ```rust, ignore,
 //! #[attr(
 //!     #[<config_name> = <value>]
 //!     <attribute>: <type>
@@ -209,7 +209,7 @@
 //! 
 //! To get the value from a variant, simple call `get_<attribute name>` or the name you've set in the properties of the attributes.
 //! 
-//! ```rust
+//! ```rust, ignore
 //! Element::VariantA.get_a();
 //! ```
 //! 
@@ -290,7 +290,7 @@ mod value;
 /// 
 /// Each attribute declaration goes between the derive and the enum.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// use custom_attrs::CustomAttrs;
 /// 
 /// #[derive(CustomAttrs)]
@@ -304,13 +304,13 @@ mod value;
 /// 
 /// By default, an attribute declaration is composed of two parts : an attribute's name and it's type.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(name: u32)]
 /// ```
 /// 
 /// You can declare many attribute declarations in a single `attr`.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(
 ///     name: u32,
 ///     name2: usize
@@ -323,7 +323,7 @@ mod value;
 /// 
 /// You can set the visibility before the attribute name. This will change the visibility of the getter function.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(pub attribute: u32)]
 /// ```
 /// 
@@ -333,19 +333,19 @@ mod value;
 /// You can disable this behavior by making it optional, by writing type into an `Option`, or by adding a default value behind the attribute declaration. See the example below.
 /// 
 /// Optional attribute syntax :
-/// ```rust
+/// ```rust, ignore
 /// #[attr(attribute: Option<u32>)]
 /// enum Enum {}
 /// ```
 /// 
 /// With default value syntax :
-/// ```rust
+/// ```rust, ignore
 /// #[attr(attribute: u32 = 3)]
 /// ```
 /// 
 /// You can add documentation to attributes declaration. It will be added to the getter function.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(
 ///     /// Attribute documentation
 ///     attribute: u32
@@ -356,7 +356,7 @@ mod value;
 /// 
 /// To set a value for a variant, just add the name of the attribute followed by the value you want to set.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// enum Enum {
 ///     #[attr(attribute = 4)]
 ///     VariantA
@@ -365,7 +365,7 @@ mod value;
 /// 
 /// Like declarations, you can set many values at once.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// enum Enum {
 ///     #[attr(
 ///         attr1 = 4,
@@ -377,7 +377,7 @@ mod value;
 /// 
 /// If the attribute is optional, you don't have to wrap it in a `Some`. `custom_attrs` will do this for you _(value wrapped in a Some are still supported)_. If you want the value to be `None`, just put `None` behind the it.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(optional: Option<usize>)]
 /// enum Enum {
 ///     #[attr(optional = 4)]
@@ -397,7 +397,7 @@ mod value;
 /// 
 /// The syntax is the following :
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(name: usize)]
 /// enum Enum {
 ///     // Use the name of the field if it's named
@@ -414,7 +414,7 @@ mod value;
 /// 
 /// Self references are processed before the value is parsed as expression, so you can use them anywhere you need :
 /// 
-/// ```rust
+/// ```rust, ignore
 /// enum Enum {
 ///     #[attr(a = #self.list[*#self.index])]
 ///     Variant3 {
@@ -426,7 +426,7 @@ mod value;
 /// 
 /// If you're using self reference, the value returned will also be a reference. You can deref it like so :
 /// 
-/// ```rust
+/// ```rust, ignore
 /// #[attr(name = *#self.<field>)]
 /// ```
 /// 
@@ -474,7 +474,7 @@ mod value;
 /// 
 /// To get the value from a variant, simple call `get_<attribute name>` or the name you've set in the properties of the attributes.
 /// 
-/// ```rust
+/// ```rust, ignore
 /// Element::VariantA.get_a();
 /// ```
 /// 
